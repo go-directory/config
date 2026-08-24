@@ -1,6 +1,6 @@
 ## config
 
-Package config provides a makeshift `cn=config` abstraction. It is designed for use by [go-directory/dsa](https://github.com/go-directory/dsa).
+Package config provides a makeshift `cn=config` abstraction. It is designed for use by [go-directory/dsa](https://github.com/go-directory/dsa) only.
 
 # License
 
@@ -12,9 +12,20 @@ This package is currently under heavy development and is considered EXPERIMENTAL
 
 # Example
 
-An instance of `*config.Config` is produced following a call to the `config.Parse` package level function. The file specified as the argument must be a legal LDIF with a root suffix of `cn=config`, and MUST bear a file extension of "`.ldif`".
+An instance of `*config.Config` is populated following a call to the `Config.ParseLDIF` or `Config.ReadBytes` methods.
+
+The file specified as the argument to `Config.ParseLDIF` must be a legal LDIF with a root suffix of `cn=config`, and MUST bear a file extension of "`.ldif`". See the `testdata/dse.ldif` for an example.
 
 ```go
-  c, err := config.Parse("/path/to/dse.ldif")
+  c := &Config{}
+  err := c.ParseLDIF("/path/to/dse.ldif")
+  <check error>
+```
+
+... or ...
+
+```go
+  c := &Config{}
+  err := c.ReadBytes([]byte{<dse LDIF bytes>})
   <check error>
 ```

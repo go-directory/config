@@ -158,13 +158,13 @@ func indicesHandler(
 			}
 			if isLocalIndex(e.Entry.DN, E.DN) {
 				// LOCAL index
-				idx := makeIndexEntry(r,L,e)
+				idx := makeIndexEntry(r, L, e)
 				if err = isIndexed(string(idx.Attribute), "LOCALLY"); err == nil {
 					indices.Index = append(indices.Index, idx)
 				}
 			} else if isGlobalIndex(e.Entry.DN) {
 				// GLOBAL index
-				idx := makeIndexEntry(r,L,e)
+				idx := makeIndexEntry(r, L, e)
 				if err = isIndexed(string(idx.Attribute), "GLOBALLY"); err == nil {
 					r.Indices.Index = append(r.Indices.Index, idx)
 				}

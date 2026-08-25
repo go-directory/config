@@ -1,0 +1,635 @@
+## Go Directory cn=config schema
+## Author: Jesse Coretta <jesse.coretta@icloud.com>
+## Date: Aug 19, 2026
+## OID Root: 1.3.6.1.4.1.56521.389.2.60
+## - {iso identified-organization(3) dod(6) internet(1) private(4) enterprise(1) 56521 go-directory(389) schema(2) configuration(60)}
+##
+## Inventory
+##
+##  - Attribute Types     (1.3.6.1.4.1.56521.389.2.60.3)
+##  - Object Classes      (1.3.6.1.4.1.56521.389.2.60.5)
+##  - Name Forms          (1.3.6.1.4.1.56521.389.2.60.7)
+##  - DIT Structure Rules (1.3.6.1.4.1.56521.389.2.60.8)
+
+##
+## Attribute Type dependencies
+##
+##attributeTypes ( 2.5.4.0 NAME 'objectClass'
+##  EQUALITY objectIdentifierMatch
+##  SYNTAX 1.3.6.1.4.1.1466.115.121.1.38
+##  X-ORIGIN 'RFC4512' )
+##attributeTypes ( 2.5.21.9 NAME 'structuralObjectClass'
+##  EQUALITY objectIdentifierMatch
+##  SYNTAX 1.3.6.1.4.1.1466.115.121.1.38
+##  SINGLE-VALUE NO-USER-MODIFICATION
+##  USAGE directoryOperation
+##  X-ORIGIN 'RFC4512' )
+##attributeTypes ( 2.5.4.41 NAME 'name'
+##  EQUALITY caseIgnoreMatch
+##  SUBSTR caseIgnoreSubstringsMatch
+##  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+##  X-ORIGIN 'RFC4519' )
+##attributeTypes ( 2.5.4.3 NAME ( 'cn' 'commonName' )
+##  SUP name
+##  X-ORIGIN 'RFC4519' )
+##attributeType: ( 2.5.4.13 NAME 'description'
+##  EQUALITY caseIgnoreMatch
+##  SUBSTR caseIgnoreSubstringsMatch
+##  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+##  X-ORIGIN 'RFC4519' )
+
+##
+## Object Class dependencies
+##
+##objectClasses ( 2.5.6.0 NAME 'top'
+##  ABSTRACT
+##  MUST objectClass )
+
+## 1.3.6.1.4.1.56521.389.2.60.3 (attributeTypes)
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.1 NAME 'configDSEPath'
+  DESC 'Path and filename of central configuration DSE LDIF'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseExactMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.2 NAME 'configSchemaDN'
+  DESC 'The intended DN of the associated schema subentry'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  EQUALITY distinguishedNameMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.3 NAME 'configTLSListenerCert'
+  DESC 'X.509 listener certificate for the DSA'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseExactMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.4 NAME 'configTLSClientCert'
+  DESC 'X.509 client certificate for a component of the DSA'
+  SUP configTLSListenerCert
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.5 NAME 'configTLSListenerKey'
+  DESC 'Listener private key for the DSA'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseExactMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.6 NAME 'configTLSClientKey'
+  DESC 'Client private key for a component of the DSA'
+  SUP configTLSListenerKey
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.7 NAME 'configDITType'
+  DESC 'Integer identifier of the underlying DIT type - ephemeral (1) or persistent (2)'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  EQUALITY integerMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.8 NAME 'configDITSuffix'
+  DESC 'Naming context of a configured DIT'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  EQUALITY distinguishedNameMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.9 NAME 'configGlueParentSuffix'
+  DESC 'Naming context of the configured superior DIT'
+  SUP configDITSuffix
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.10 NAME 'configTLSClientMutual'
+  DESC 'Whether to perform TLS Mutual Authentication'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.11 NAME 'configIndexEquality'
+  DESC 'Whether to index the associated attribute by EQUALITY'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.12 NAME 'configIndexSubstring'
+  DESC 'Whether to index the associated attribute by SUBSTR'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.13 NAME 'configIndexPresence'
+  DESC 'Whether to index the associated attribute by PRESENCE'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.14 NAME 'configIndexApprox'
+  DESC 'Whether to index the associated attribute by APPROX'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.15 NAME 'configTLSCA'
+  DESC 'The certificate or certificate bundle to be used for TLS verification'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseExactMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.16 NAME 'configReplAgreementBaseDN'
+  DESC 'The replicated context'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  EQUALITY distinguishedNameMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.17 NAME 'configReplAgreementProviderURI'
+  DESC 'The URI of the upstream provider of DIT content in a PULL replicated topology'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseIgnoreMatch
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.18 NAME 'configReplAgreementConsumerURI'
+  DESC 'The URI of the downstream consumer of DIT content in a PUSH replicated topology'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseIgnoreMatch
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.19 NAME 'configReplAgreementSimpleBindDN'
+  DESC 'The bind DN used for SIMPLE authentication in a replicated topology'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  EQUALITY distinguishedNameMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.20 NAME 'configReplAgreementSimpleBindPW'
+  DESC 'The bind password used for SIMPLE authentication in a replicated topology'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.40
+  EQUALITY octetStringMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.21 NAME 'configReplAgreementSearchScope'
+  DESC 'The search scope, or subset, used when polling entries during content replication'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseExactMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.22 NAME 'configReplAgreementSearchFilter'
+  DESC 'The search filter used when polling entries during content replication'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseExactMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.23 NAME 'configReplAgreementAttribute'
+  DESC 'Specific attributes disclosed from polled entries during content replication'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseIgnoreMatch
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.24 NAME 'configReplAgreementPush'
+  DESC 'Push content from provider to consumer as opposed to a consumer pulling from provider'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.25 NAME 'configReplAgreementUseTxLog'
+  DESC 'Whether to use a transaction log for delta synchronization'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.26 NAME 'configChainingEndpointURI'
+  DESC 'The endpoint URI to which chained requests are sent'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseIgnoreMatch
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.27 NAME 'configChainingSimpleBindDN'
+  DESC 'The bind DN used for SIMPLE authentication in a chaining request'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+  EQUALITY distinguishedNameMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.28 NAME 'configChainingSimpleBindPW'
+  DESC 'The bind password used for SIMPLE authentication in a chaining request'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.40
+  EQUALITY octetStringMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.29 NAME 'configSASLMechanism'
+  DESC 'The mechanism employed for SASL authentication'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseIgnoreMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.30 NAME 'configMetaSchema'
+  DESC 'Whether to initialize and maintain a meta schema structure instance of a schema'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.31 NAME 'configSizeLimit'
+  DESC 'Integer value defining the maximum search result entry limit'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  EQUALITY integerMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.32 NAME 'configTimeLimit'
+  DESC 'Integer value defining the maximum search time limit'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.27
+  EQUALITY integerMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+
+## 1.3.6.1.4.1.56521.389.2.60.5 (objectClasses)
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.1 NAME 'goDirConfig'
+  DESC 'The root of the configuration DIT'
+  SUP top
+  STRUCTURAL
+  MUST ( cn
+       $ configDSEPath )
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.2 NAME 'goDirConfigControls'
+  DESC 'The root of the global controls subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.3 NAME 'goDirConfigExtensions'
+  DESC 'The root of the global extended operations subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.4 NAME 'goDirConfigSchemata'
+  DESC 'The root of the global schemata subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.5 NAME 'goDirConfigSchema'
+  DESC 'Leaf entry defining a single schema naming context'
+  SUP top
+  STRUCTURAL
+  MUST ( cn
+       $ configSchemaDN )
+  MAY ( configMetaSchema
+      $ description )
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.6 NAME 'goDirConfigTLS'
+  DESC 'TLS parameters for listener, client or replication agreement entries'
+  SUP top
+  STRUCTURAL
+  MUST ( cn
+       $ configTLSClientMutual
+       $ configTLSCA
+       $ configTLSListenerCert
+       $ configTLSListenerKey
+       $ configTLSClientCert
+       $ configTLSClientKey )
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.7 NAME 'goDirConfigDIB'
+  DESC 'The root of the DIB subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.8 NAME 'goDirConfigDIT'
+  DESC 'The root of a single DIT subtree'
+  SUP top
+  STRUCTURAL
+  MUST ( cn
+       $ configDITType
+       $ configDITSuffix )
+  MAY ( configGlueParentSuffix
+      $ description )
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.9 NAME 'goDirConfigIndices'
+  DESC 'The root or DIT-specific parent entry of an indices subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.10 NAME 'goDirConfigLimits'
+  DESC 'The root or DIT-specific parent entry of a limits subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY ( configSizeLimit
+      $ configTimeLimit
+      $ description )
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.11 NAME 'goDirConfigIndex'
+  DESC 'Leaf entry containing the parameters of a single attribute index'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY ( configIndexEquality
+      $ configIndexSubstring
+      $ configIndexPresence
+      $ configIndexApprox
+      $ description )
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.12 NAME 'goDirConfigReplAgreements'
+  DESC 'The DIT-specific parent entry of a replication agreements subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.13 NAME 'goDirConfigReplAgreement'
+  DESC 'Leaf entry containing the parameters of a single replication agreement'
+  SUP top
+  STRUCTURAL
+  MUST ( cn
+       $ configReplAgreementBaseDN )
+  MAY ( configReplAgreementProviderURI
+      $ configReplAgreementConsumerURI
+      $ configReplAgreementSimpleBindDN
+      $ configReplAgreementSimpleBindPW
+      $ configReplAgreementSearchScope
+      $ configReplAgreementSearchFilter
+      $ configReplAgreementAttribute
+      $ configReplAgreementPush
+      $ configReplAgreementUseTxLog
+      $ configSASLMechanism
+      $ configTLSClientCert
+      $ configTLSClientKey
+      $ configTLSClientMutual
+      $ description )
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.14 NAME 'goDirConfigControls'
+  DESC 'The root of the supported controls subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.15 NAME 'goDirConfigControl'
+  DESC 'Leaf entry containing the parameters of a single supported control'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.16 NAME 'goDirConfigFeatures'
+  DESC 'The root of the supported features subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.17 NAME 'goDirConfigFeature'
+  DESC 'Leaf entry containing the parameters of a single supported feature'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.18 NAME 'goDirConfigExtensions'
+  DESC 'The root of the supported extended operations subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.19 NAME 'goDirConfigExtension'
+  DESC 'Leaf entry containing the parameters of a single extended operation'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.20 NAME 'goDirConfigChains'
+  DESC 'The DIT-specific parent of the supported extended operations subtree'
+  SUP top
+  STRUCTURAL
+  MUST cn
+  MAY description
+  X-ORIGIN 'Jesse Coretta' )
+objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.21 NAME 'goDirConfigChain'
+  DESC 'Leaf entry containing the parameters of a single chaining agreement'
+  SUP top
+  STRUCTURAL
+  MUST ( cn
+       $ configChainingEndpointURI )
+  MAY ( configChainingSimpleBindDN
+      $ configChainingSimpleBindPW
+      $ configSASLMechanism
+      $ configTLSClientCert
+      $ configTLSClientKey
+      $ configTLSCA
+      $ configTLSClientMutual
+      $ description )
+  X-ORIGIN 'Jesse Coretta' )
+
+## 1.3.6.1.4.1.56521.389.2.60.7 (nameForms)
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.1 NAME 'configRootForm'
+  DESC 'Enforces use of cn for configuration root DN'
+  OC goDirConfig
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.2 NAME 'configExtensionsRootForm'
+  DESC 'Enforces use of cn for extended operations configuration root RDN'
+  OC goDirConfigExtensions
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.3 NAME 'configFeaturesRootForm'
+  DESC 'Enforces use of cn for supported features configuration root RDN'
+  OC goDirConfigFeatures
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.4 NAME 'configControlsRootForm'
+  DESC 'Enforces use of cn for supported controls configuration root RDN'
+  OC goDirConfigControls
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.5 NAME 'configTLSRootForm'
+  DESC 'Enforces use of cn for the TLS configuration root or DIT-specific parent RDN'
+  OC goDirConfigTLS
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.6 NAME 'configDIBRootForm'
+  DESC 'Enforces use of cn for the DIB configuration root RDN'
+  OC goDirConfigDIB
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.7 NAME 'configDITRootForm'
+  DESC 'Enforces use of cn for a DIT subtree parent'
+  OC goDirConfigDIT
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.8 NAME 'configIndicesRootForm'
+  DESC 'Enforces use of cn for an indices configuration root or DIT-specific parent RDN'
+  OC goDirConfigIndices
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.9 NAME 'configLimitsRootForm'
+  DESC 'Enforces use of cn for an limits configuration root or DIT-specific parent RDN'
+  OC goDirConfigLimits
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.10 NAME 'configReplAgreementRootForm'
+  DESC 'Enforces use of cn for a DIT-specific replication agreement subtree parent RDN'
+  OC goDirConfigReplAgreements
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.11 NAME 'configChainingRootForm'
+  DESC 'Enforces use of cn for a DIT-specific chaining agreement subtree parent RDN'
+  OC goDirConfigChains
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.12 NAME 'configIndexForm'
+  DESC 'Enforces use of cn for a single attribute index configuration entry RDN'
+  OC goDirConfigIndex
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.13 NAME 'configControlForm'
+  DESC 'Enforces use of cn for a single supported control configuration entry RDN'
+  OC goDirConfigControl
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.14 NAME 'configFeatureForm'
+  DESC 'Enforces use of cn for a single supported feature configuration entry RDN'
+  OC goDirConfigFeature
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.15 NAME 'configExtensionForm'
+  DESC 'Enforces use of cn for a single extended operation configuration entry RDN'
+  OC goDirConfigExtension
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.16 NAME 'configReplAgreementForm'
+  DESC 'Enforces use of cn for a single replication agreement configuration entry RDN'
+  OC goDirConfigReplAgreement
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+nameForms ( 1.3.6.1.4.1.56521.389.2.60.7.17 NAME 'configChainingForm'
+  DESC 'Enforces use of cn for a single chaining agreement configuration entry RDN'
+  OC goDirConfigChain
+  MUST cn
+  X-ORIGIN 'Jesse Coretta' )
+
+## 1.3.6.1.4.1.56521.389.2.60.8 (dITStructureRules)
+dITStructureRules ( 0 NAME 'configRootStructure'
+  DESC 'Implements the configRootForm name form'
+  FORM configRootForm
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 1 NAME 'configExtensionsRootStructure'
+  DESC 'Implements the configExtensionsRootForm name form'
+  FORM configExtensionsRootForm
+  SUP 0
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 2 NAME 'configFeaturesRootStructure'
+  DESC 'Implements the configFeaturesRootForm name form'
+  FORM configFeaturesRootForm
+  SUP 0
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 3 NAME 'configControlsRootStructure'
+  DESC 'Implements the configControlsRootForm name form'
+  FORM configControlsRootForm
+  SUP 0
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 4 NAME 'configTLSRootStructure'
+  DESC 'Implements the configTLSRootForm name form'
+  FORM configTLSRootForm
+  SUP 0
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 5 NAME 'configDIBRootStructure'
+  DESC 'Implements the configDIBRootForm name form'
+  FORM configDIBRootForm
+  SUP 0
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 6 NAME 'configIndicesRootStructure'
+  DESC 'Implements the configIndicesRootForm name form'
+  FORM configIndicesRootForm
+  SUP 0
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 7 NAME 'configLimitsRootStructure'
+  DESC 'Implements the configLimitsRootForm name form'
+  FORM configLimitsRootForm
+  SUP 0
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 8 NAME 'configDITRootStructure'
+  DESC 'Implements the configDITRootForm name form'
+  FORM configDITRootForm
+  SUP 5
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 9 NAME 'configDITReplAgreementRootStructure'
+  DESC 'Implements the configReplAgreementRootForm name form'
+  FORM configReplAgreementRootForm
+  SUP 8
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 10 NAME 'configDITChainingRootStructure'
+  DESC 'Implements the configChainingRootForm name form'
+  FORM configChainingRootForm
+  SUP 8
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 11 NAME 'configDITIndicesRootStructure'
+  DESC 'Implements the configIndicesRootForm name form'
+  FORM configIndicesRootForm
+  SUP 8
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 12 NAME 'configDITTLSStructure'
+  DESC 'Implements the configTLSRootForm name form'
+  FORM configTLSRootForm
+  SUP ( 4 8 )
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 13 NAME 'configIndexStructure'
+  DESC 'Implements the configIndexForm name form'
+  FORM configIndexForm
+  SUP ( 6 11 )
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 14 NAME 'configControlStructure'
+  DESC 'Implements the configControlForm name form'
+  FORM configControlForm
+  SUP 3
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 15 NAME 'configFeatureStructure'
+  DESC 'Implements the configFeatureForm name form'
+  FORM configFeatureForm
+  SUP 2
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 16 NAME 'configExtensionStructure'
+  DESC 'Implements the configExtensionForm name form'
+  FORM configExtensionForm
+  SUP 1
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 17 NAME 'configReplAgreementStructure'
+  DESC 'Implements the configReplAgreementForm name form'
+  FORM configReplAgreementForm
+  SUP 9
+  X-ORIGIN 'Jesse Coretta' )
+dITStructureRules ( 18 NAME 'configChainingStructure'
+  DESC 'Implements the configChainingForm name form'
+  FORM configChainingForm
+  SUP 10
+  X-ORIGIN 'Jesse Coretta' )

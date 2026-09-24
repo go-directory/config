@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"reflect"
 	"strconv"
 	"strings"
@@ -55,9 +54,10 @@ func (r Schema) String() string {
 	bld.WriteString("cn: ")
 	bld.Write(r.Name)
 	bld.WriteRune(10)
-	bld.WriteString("configMetaSchema: ")
-	bld.WriteString(bool2str(r.Meta))
-	bld.WriteRune(10)
+	if r.Meta {
+		bld.WriteString("configMetaSchema: TRUE")
+		bld.WriteRune(10)
+	}
 
 	return bld.String()
 }
@@ -69,6 +69,7 @@ func schemataHandler(L *ldif.LDIF, _ *dua.Entry, fv reflect.Value, sup string) e
 		if !strings.HasSuffix(dn, sup) {
 			continue
 		}
+
 		ocs := e.Entry.GetRawAttributeValues("objectClass")
 		if !(bSliceInBSlices([]byte("goDirConfigSchemata"), ocs) ||
 			bSliceInBSlices([]byte("goDirConfigSchema"), ocs)) {
@@ -100,11 +101,11 @@ func schemataHandler(L *ldif.LDIF, _ *dua.Entry, fv reflect.Value, sup string) e
 					sv.SetBytes(v)
 				}
 			case reflect.Bool:
-				sv.SetBool(bytes.EqualFold(v, []byte("TRUE")) ||
-					bytes.EqualFold(v, []byte("true")))
+				pb, _ := strconv.ParseBool(string(v))
+				sv.SetBool(pb)
 			case reflect.Int:
-				i, _ := strconv.Atoi(string(v))
-				sv.SetInt(int64(i))
+        		        i, _ := strconv.Atoi(string(v))
+		                fv.SetInt(int64(i))
 			case reflect.String:
 				sv.SetString(string(v))
 			}

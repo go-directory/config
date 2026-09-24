@@ -9,7 +9,6 @@ import (
 	"github.com/go-directory/dua"
 	"github.com/go-directory/ldif"
 	"github.com/go-directory/syntax"
-	"github.com/go-directory/syntax/filter"
 )
 
 type ReplicationAgreement struct {
@@ -227,7 +226,7 @@ func verifyAgreementSearchParams(agree ReplicationAgreement) (err error) {
 	}
 
 	if len(agree.Filter) > 0 {
-		if _, err = filter.New(agree.Filter); err != nil {
+		if _, err = syntax.NewFilter(agree.Filter); err != nil {
 			err = errInvalidSyncFilter
 			return
 		}

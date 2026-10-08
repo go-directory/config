@@ -5,8 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 var cnIndicesConfigDN = []byte(`cn=indices,cn=config`)
@@ -100,9 +99,9 @@ func (r Index) String() string {
 	return bld.String()
 }
 
-func makeIndexEntry(r *Config, L *ldif.LDIF, entry *ldif.Entry) (idx Index) {
-	entry.Entry.UnmarshalFunc(&idx, func(
-		se *dua.Entry,
+func makeIndexEntry(r *Config, L *ldif.LDIF, entry *ldif.GenericEntry) (idx Index) {
+	unmarshalFunc(entry, &idx, func(
+		se *ldif.GenericEntry,
 		ft reflect.StructField,
 		sv reflect.Value) error {
 		return r.dispatchUnmarshal(L, se, ft, sv)
@@ -116,10 +115,18 @@ func isIdxTarget(a string) bool {
 			strings.HasSuffix(a, ",cn=dib,cn=config"))
 }
 
+func isLocalIndex(c, p string) bool {
+	return isIdxTarget(c) && strings.HasSuffix(c, p)
+}
+
+func isGlobalIndex(c string) bool {
+	return strings.HasSuffix(c, ",cn=indices,cn=config")
+}
+
 func indicesHandler(
 	r *Config,
 	L *ldif.LDIF,
-	E *dua.Entry,
+	E *ldif.GenericEntry,
 	fv reflect.Value,
 	_ string,
 ) (err error) {
@@ -133,43 +140,37 @@ func indicesHandler(
 		return err
 	}
 
-	ocs := E.GetRawAttributeValues("objectClass")
+	ocs := avs2b(E.GetAttributeValues(ad("objectClass"))...)
 	if bSliceInBSlices([]byte("goDirConfigIndices"), ocs) {
-		indices.DN = []byte(E.DN)
+		indices.DN = []byte(E.DN())
 	}
 
-	isLocalIndex := func(c, p string) bool {
-		return isIdxTarget(c) && strings.HasSuffix(c, p)
-	}
-
-	isGlobalIndex := func(c string) bool {
-		return strings.HasSuffix(c, ",cn=indices,cn=config")
-	}
-
-	if isIdxTarget(E.DN) {
+	if isIdxTarget(E.DN().String()) {
 		for i := 0; i < len(L.Entries) && err == nil; i++ {
 			e := L.Entries[i]
-			ocs := e.Entry.GetRawAttributeValues("objectClass")
+			ass := e.(ldif.GenericEntry)
+			dn := ass.DN().String()
+			ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
 			if bSliceInBSlices([]byte("goDirConfigIndices"), ocs) {
 				r.Indices.DN = cnIndicesConfigDN
 				continue
 			} else if !bSliceInBSlices([]byte("goDirConfigIndex"), ocs) {
 				continue
 			}
-			if isLocalIndex(e.Entry.DN, E.DN) {
+			if isLocalIndex(dn, E.DN().String()) {
 				// LOCAL index
-				idx := makeIndexEntry(r, L, e)
+				idx := makeIndexEntry(r, L, &ass)
 				if err = isIndexed(string(idx.Attribute), "LOCALLY"); err == nil {
 					indices.Index = append(indices.Index, idx)
 				}
-			} else if isGlobalIndex(e.Entry.DN) {
+			} else if isGlobalIndex(dn) {
 				// GLOBAL index
-				idx := makeIndexEntry(r, L, e)
+				idx := makeIndexEntry(r, L, &ass)
 				if err = isIndexed(string(idx.Attribute), "GLOBALLY"); err == nil {
 					r.Indices.Index = append(r.Indices.Index, idx)
 				}
 			} else {
-				err = errors.New("Unmatched Index element '" + e.Entry.DN + "'")
+				err = errors.New("Unmatched Index element '" + dn + "'")
 			}
 		}
 		if len(indices.Index) > 0 && err == nil {

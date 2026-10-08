@@ -5,8 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 var cnSchemataConfigDN = []byte(`cn=schemata,cn=config`)
@@ -62,34 +61,35 @@ func (r Schema) String() string {
 	return bld.String()
 }
 
-func schemataHandler(L *ldif.LDIF, _ *dua.Entry, fv reflect.Value, sup string) error {
+func schemataHandler(L *ldif.LDIF, _ *ldif.GenericEntry, fv reflect.Value, sup string) error {
 	var out Schemata
 	for _, e := range L.Entries {
-		dn := strings.ToLower(e.Entry.DN)
+		ass := e.(ldif.GenericEntry)
+		dn := strings.ToLower(e.DN().String())
 		if !strings.HasSuffix(dn, sup) {
 			continue
 		}
 
-		ocs := e.Entry.GetRawAttributeValues("objectClass")
+		ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
 		if !(bSliceInBSlices([]byte("goDirConfigSchemata"), ocs) ||
 			bSliceInBSlices([]byte("goDirConfigSchema"), ocs)) {
 			continue
 		}
 
 		var sc Schema
-		e.Entry.UnmarshalFunc(&sc, func(
-			se *dua.Entry,
+		unmarshalFunc(&ass, &sc, func(
+			se *ldif.GenericEntry,
 			ft reflect.StructField,
 			sv reflect.Value) error {
 			tag := ft.Tag.Get("ldap")
 
 			if ft.Name == "Name" {
-				sc.DN = []byte("cn=" + e.Entry.GetAttributeValue("cn") + "," + sup)
+				sc.DN = []byte("cn=" + ass.GetAttributeValue(ad("cn")).String() + "," + sup)
 			}
 
 			tags := splitTags(tag)
 			attr := tags[0]
-			vals := se.GetRawAttributeValues(attr)
+			vals := se.GetAttributeValues(ad(attr))
 			if len(vals) == 0 {
 				return nil
 			}
@@ -104,8 +104,8 @@ func schemataHandler(L *ldif.LDIF, _ *dua.Entry, fv reflect.Value, sup string) e
 				pb, _ := strconv.ParseBool(string(v))
 				sv.SetBool(pb)
 			case reflect.Int:
-        		        i, _ := strconv.Atoi(string(v))
-		                fv.SetInt(int64(i))
+				i, _ := strconv.Atoi(string(v))
+				fv.SetInt(int64(i))
 			case reflect.String:
 				sv.SetString(string(v))
 			}

@@ -8,8 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 func (r *Config) ParseLDIF(path string) (err error) {
@@ -29,15 +28,16 @@ func (r *Config) ParseLDIF(path string) (err error) {
 func (r *Config) ReadBytes(data []byte) (err error) {
 	var L *ldif.LDIF
 	if L, err = ldif.Parse(string(data)); err == nil {
-		if cdn := L.Entries[0].Entry.DN; cdn != string(cnConfigDN) {
+		if cdn := L.Entries[0].DN().String(); cdn != string(cnConfigDN) {
 			err = errors.New("Unexpected config DN '" + cdn + "'")
 			return
 		}
 	}
 
 	*r = Config{}
-	return L.Entries[0].Entry.UnmarshalFunc(r, func(
-		e *dua.Entry,
+	ent := L.Entries[0].(ldif.GenericEntry)
+	return unmarshalFunc(&ent, r, func(
+		e *ldif.GenericEntry,
 		ft reflect.StructField,
 		fv reflect.Value) error {
 		return r.dispatchUnmarshal(L, e, ft, fv)
@@ -46,7 +46,7 @@ func (r *Config) ReadBytes(data []byte) (err error) {
 
 func (r *Config) dispatchUnmarshal(
 	L *ldif.LDIF,
-	entry *dua.Entry,
+	entry *ldif.GenericEntry,
 	ft reflect.StructField,
 	fv reflect.Value) error {
 
@@ -55,7 +55,7 @@ func (r *Config) dispatchUnmarshal(
 	}
 
 	if ft.Name == "DN" && ft.Tag.Get("ldap") == "" {
-		fv.SetBytes([]byte(entry.DN))
+		fv.SetBytes([]byte(entry.DN()))
 		return nil
 	}
 
@@ -70,7 +70,7 @@ func (r *Config) dispatchUnmarshal(
 
 	tags := splitTags(tag)
 	attr := tags[0]
-	vals := entry.GetRawAttributeValues(attr)
+	vals := entry.GetAttributeValues(ad(attr))
 	if len(vals) == 0 {
 		return nil
 	}
@@ -93,10 +93,10 @@ func (r *Config) dispatchUnmarshal(
 	return nil
 }
 
-func (r *Config) structUnmarshal(L *ldif.LDIF, entry *dua.Entry, fv reflect.Value) error {
+func (r *Config) structUnmarshal(L *ldif.LDIF, entry *ldif.GenericEntry, fv reflect.Value) error {
 	t := fv.Type()
 
-	handlers := map[reflect.Type]func(*ldif.LDIF, *dua.Entry, reflect.Value, string) error{
+	handlers := map[reflect.Type]func(*ldif.LDIF, *ldif.GenericEntry, reflect.Value, string) error{
 		reflect.TypeOf(Schemata{}):    r.schemataHandler,
 		reflect.TypeOf(Limits{}):      r.limitsHandler,
 		reflect.TypeOf(ListenerTLS{}): r.listenerTLSHandler,
@@ -108,44 +108,44 @@ func (r *Config) structUnmarshal(L *ldif.LDIF, entry *dua.Entry, fv reflect.Valu
 	}
 
 	if h, ok := handlers[t]; ok {
-		return h(L, entry, fv, entry.DN)
+		return h(L, entry, fv, entry.DN().String())
 	}
 
 	return nil
 }
 
-func (r *Config) schemataHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, _ string) error {
+func (r *Config) schemataHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) error {
 	return schemataHandler(L, E, fv, string(cnSchemataConfigDN))
 }
 
-func (r *Config) limitsHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, _ string) error {
+func (r *Config) limitsHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) error {
 	return limitsHandler(r, L, E, fv, string(cnLimitsConfigDN))
 }
 
-func (r *Config) clientTLSHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, _ string) error {
+func (r *Config) clientTLSHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) error {
 	return clientTLSHandler(r, L, E, fv, ``) // dit specific
 }
 
-func (r *Config) listenerTLSHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, sup string) error {
+func (r *Config) listenerTLSHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, sup string) error {
 	return listenerTLSHandler(r, L, E, fv, string(cnTLSConfigDN))
 }
 
-func (r *Config) indicesHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, _ string) error {
+func (r *Config) indicesHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) error {
 	return indicesHandler(r, L, E, fv, ``)
 }
 
-func (r *Config) dibHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, _ string) (err error) {
+func (r *Config) dibHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
 	return dibHandler(r, L, E, fv, ``)
 }
 
-func (r *Config) controlsHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, _ string) (err error) {
+func (r *Config) controlsHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
 	return controlsHandler(r, L, E, fv, string(cnControlsConfigDN))
 }
 
-func (r *Config) featuresHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, _ string) (err error) {
+func (r *Config) featuresHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
 	return featuresHandler(r, L, E, fv, string(cnFeaturesConfigDN))
 }
 
-func (r *Config) exopHandler(L *ldif.LDIF, E *dua.Entry, fv reflect.Value, _ string) (err error) {
+func (r *Config) exopHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
 	return exopHandler(r, L, E, fv, string(cnExOpConfigDN))
 }

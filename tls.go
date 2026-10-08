@@ -5,8 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 var cnTLSConfigDN = []byte(`cn=tls,cn=config`)
@@ -99,20 +98,22 @@ func (r ClientTLS) String() string {
 func clientTLSHandler(
 	r *Config,
 	L *ldif.LDIF,
-	_ *dua.Entry,
+	_ *ldif.GenericEntry,
 	fv reflect.Value,
 	sup string,
 ) error {
 	for _, e := range L.Entries {
-		if strings.HasPrefix(e.Entry.DN, "cn=tls,") &&
-			strings.HasSuffix(e.Entry.DN, ","+string(cnDIBConfigDN)) {
+		ass := e.(ldif.GenericEntry)
+		dn := e.DN().String()
+		if strings.HasPrefix(dn, "cn=tls,") &&
+			strings.HasSuffix(dn, ","+string(cnDIBConfigDN)) {
 			var tls ClientTLS
-			tls.DN = []byte(e.Entry.DN)
-			tls.Cert = e.Entry.GetRawAttributeValue(`configTLSClientCert`)
-			tls.Key = e.Entry.GetRawAttributeValue(`configTLSClientKey`)
-			tls.Issuer = e.Entry.GetRawAttributeValue(`configTLSCA`)
-			mut := e.Entry.GetAttributeValue(`configTLSClientMutual`)
-			b, _ := strconv.ParseBool(mut)
+			tls.DN = []byte(dn)
+			tls.Cert = ass.GetAttributeValue(ad(`configTLSClientCert`))
+			tls.Key = ass.GetAttributeValue(ad(`configTLSClientKey`))
+			tls.Issuer = ass.GetAttributeValue(ad(`configTLSCA`))
+			mut := ass.GetAttributeValue(ad(`configTLSClientMutual`))
+			b, _ := strconv.ParseBool(mut.String())
 			tls.Mutual = b
 			fv.Set(reflect.ValueOf(tls))
 			break
@@ -124,17 +125,19 @@ func clientTLSHandler(
 func listenerTLSHandler(
 	r *Config,
 	L *ldif.LDIF,
-	_ *dua.Entry,
+	_ *ldif.GenericEntry,
 	fv reflect.Value,
 	sup string,
 ) error {
 	for _, e := range L.Entries {
-		if strings.EqualFold(e.Entry.DN, string(cnTLSConfigDN)) {
+		ass := e.(ldif.GenericEntry)
+		dn := e.DN().String()
+		if strings.EqualFold(dn, string(cnTLSConfigDN)) {
 			var tls ListenerTLS
-			tls.DN = []byte(e.Entry.DN)
-			tls.Cert = e.Entry.GetRawAttributeValue(`configTLSListenerCert`)
-			tls.Key = e.Entry.GetRawAttributeValue(`configTLSListenerKey`)
-			tls.Issuer = e.Entry.GetRawAttributeValue(`configTLSCA`)
+			tls.DN = []byte(dn)
+			tls.Cert = ass.GetAttributeValue(ad(`configTLSListenerCert`))
+			tls.Key = ass.GetAttributeValue(ad(`configTLSListenerKey`))
+			tls.Issuer = ass.GetAttributeValue(ad(`configTLSCA`))
 			fv.Set(reflect.ValueOf(tls))
 			break
 		}

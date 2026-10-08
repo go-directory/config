@@ -4,8 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 var cnExOpConfigDN = []byte(`cn=exop,cn=config`)
@@ -78,7 +77,7 @@ func (r Extension) String() string {
 func exopHandler(
 	r *Config,
 	L *ldif.LDIF,
-	E *dua.Entry,
+	E *ldif.GenericEntry,
 	fv reflect.Value,
 	sup string,
 ) (err error) {
@@ -89,9 +88,9 @@ func exopHandler(
 
 	var exop Extensions
 
-	makeCtrlEntry := func(entry *ldif.Entry) (extension Extension) {
-		entry.Entry.UnmarshalFunc(&extension, func(
-			se *dua.Entry,
+	makeCtrlEntry := func(entry *ldif.GenericEntry) (extension Extension) {
+		unmarshalFunc(entry, &extension, func(
+			se *ldif.GenericEntry,
 			ft reflect.StructField,
 			sv reflect.Value) error {
 			return r.dispatchUnmarshal(L, se, ft, sv)
@@ -101,16 +100,17 @@ func exopHandler(
 
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
 		e := L.Entries[i]
-		if isTarget(e.Entry.DN) {
-			ocs := e.Entry.GetRawAttributeValues("objectClass")
+		ass := e.(ldif.GenericEntry)
+		if isTarget(e.DN().String()) {
+			ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
 			if bSliceInBSlices([]byte("goDirConfigExtensions"), ocs) {
-				exop.DN = []byte(e.Entry.DN)
+				exop.DN = []byte(ass.DN())
 				continue
 			} else if !bSliceInBSlices([]byte("goDirConfigExtension"), ocs) {
 				continue
 			}
 
-			exop.Extension = append(exop.Extension, makeCtrlEntry(e))
+			exop.Extension = append(exop.Extension, makeCtrlEntry(&ass))
 		}
 	}
 

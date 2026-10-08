@@ -5,8 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 var cnDIBConfigDN = []byte(`cn=dib,cn=config`)
@@ -139,24 +138,26 @@ func (r DIT) String() string {
 	return bld.String()
 }
 
-func dibHandler(r *Config, L *ldif.LDIF, _ *dua.Entry, fv reflect.Value, _ string) (err error) {
+func dibHandler(r *Config, L *ldif.LDIF, _ *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
 	var dib DIB
 	sup := string(cnDIBConfigDN)
 
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
 		this := L.Entries[i]
-		if !strings.HasSuffix(this.Entry.DN, sup) {
+		dn := string(this.DN())
+		if !strings.HasSuffix(dn, sup) {
 			continue
 		}
-		if strings.EqualFold(this.Entry.DN, sup) {
-			dib.DN = []byte(this.Entry.DN)
+		if strings.EqualFold(dn, sup) {
+			dib.DN = []byte(dn)
 			continue
 		}
-		if strings.Count(this.Entry.DN, ",") == 2 {
+		if strings.Count(dn, ",") == 2 {
 			// only descend into immediate children
 			// of the "cn=dib,cn=config" context.
 			var dit DIT
-			if dit, err = ditHandler(r, L, this.Entry, fv); err == nil {
+			ge := this.(ldif.GenericEntry)
+			if dit, err = ditHandler(r, L, &ge, fv); err == nil {
 				dib.DITs = append(dib.DITs, dit)
 			}
 		}
@@ -170,36 +171,38 @@ func dibHandler(r *Config, L *ldif.LDIF, _ *dua.Entry, fv reflect.Value, _ strin
 func ditHandler(
 	r *Config,
 	L *ldif.LDIF,
-	E *dua.Entry,
+	E *ldif.GenericEntry,
 	fv reflect.Value,
 ) (dit DIT, err error) {
-	E.UnmarshalFunc(&dit, func(
-		se *dua.Entry,
+	unmarshalFunc(E, &dit, func(
+		se *ldif.GenericEntry,
 		ft reflect.StructField,
 		sv reflect.Value) error {
 		return r.dispatchUnmarshal(L, se, ft, sv)
 	})
 
 	for _, this := range L.Entries {
-		tdn := this.Entry.DN
-		if tdn == E.DN || !strings.HasSuffix(tdn, E.DN) {
+		tdn := this.DN().String()
+		if tdn == E.DN().String() || !strings.HasSuffix(tdn, E.DN().String()) {
 			continue
 		}
 
+		ass := this.(ldif.GenericEntry)
+
 		switch {
-		case strings.EqualFold(tdn, "cn=indices,"+E.DN):
+		case strings.EqualFold(tdn, "cn=indices,"+E.DN().String()):
 			sv := reflect.ValueOf(&dit.Indices).Elem()
-			r.indicesHandler(L, this.Entry, sv, tdn)
-		case strings.EqualFold(tdn, "cn=limits,"+E.DN):
+			r.indicesHandler(L, &ass, sv, tdn)
+		case strings.EqualFold(tdn, "cn=limits,"+E.DN().String()):
 			sv := reflect.ValueOf(&dit.Limits).Elem()
-			r.limitsHandler(L, this.Entry, sv, string(dit.Name))
+			r.limitsHandler(L, &ass, sv, string(dit.Name))
 		case strings.HasPrefix(tdn, "cn=tls,"):
 			sv := reflect.ValueOf(&dit.ClientTLS).Elem()
-			r.clientTLSHandler(L, this.Entry, sv, tdn)
+			r.clientTLSHandler(L, &ass, sv, tdn)
 		case strings.HasPrefix(tdn, "cn=sync,"):
-			dit.Sync, err = syncHandler(L, this.Entry, fv, string(dit.Name))
+			dit.Sync, err = syncHandler(L, &ass, fv, string(dit.Name))
 		case strings.HasPrefix(tdn, "cn=chaining,"):
-			dit.Chaining, err = chainingHandler(L, this.Entry, fv, string(dit.Name))
+			dit.Chaining, err = chainingHandler(L, &ass, fv, string(dit.Name))
 		}
 	}
 

@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 var cnLimitsConfigDN = []byte(`cn=limits,cn=config`)
@@ -46,7 +45,7 @@ func (r Limits) String() string {
 func limitsHandler(
 	r *Config,
 	L *ldif.LDIF,
-	E *dua.Entry,
+	E *ldif.GenericEntry,
 	fv reflect.Value,
 	sup string,
 ) error {
@@ -65,24 +64,26 @@ func limitsHandler(
 
 	if global {
 		var lim Limits
-		lim.SizeLimit, _ = strconv.Atoi(E.GetAttributeValue("configSizeLimit"))
-		lim.TimeLimit, _ = strconv.Atoi(E.GetAttributeValue("configTimeLimit"))
-		lim.DN = []byte(E.DN)
+		lim.SizeLimit, _ = strconv.Atoi(E.GetAttributeValue(ad("configSizeLimit")).String())
+		lim.TimeLimit, _ = strconv.Atoi(E.GetAttributeValue(ad("configTimeLimit")).String())
+		lim.DN = []byte(E.DN())
 		fv.Set(reflect.ValueOf(lim))
 		return nil
 	}
 
 	for _, e := range L.Entries {
-		if isTarget(e.Entry.DN, sup) {
-			log.Printf("2nd path matched: %q", e.Entry.DN)
+		ass := e.(*ldif.GenericEntry)
+		dn := e.DN().String()
+		if isTarget(dn, sup) {
+			log.Printf("2nd path matched: %q", dn)
 			var lim Limits
-			lim.SizeLimit, _ = strconv.Atoi(e.Entry.GetAttributeValue("configSizeLimit"))
-			lim.TimeLimit, _ = strconv.Atoi(e.Entry.GetAttributeValue("configTimeLimit"))
-			lim.DN = []byte(e.Entry.DN)
+			lim.SizeLimit, _ = strconv.Atoi(ass.GetAttributeValue(ad("configSizeLimit")).String())
+			lim.TimeLimit, _ = strconv.Atoi(ass.GetAttributeValue(ad("configTimeLimit")).String())
+			lim.DN = []byte(dn)
 			fv.Set(reflect.ValueOf(lim))
 			break
 		} else {
-			log.Printf("Skip %q", e.Entry.DN)
+			log.Printf("Skip %q", dn)
 		}
 	}
 	return nil

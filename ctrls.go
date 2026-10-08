@@ -4,8 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 var cnControlsConfigDN = []byte(`cn=controls,cn=config`)
@@ -80,7 +79,7 @@ func (r Control) String() string {
 func controlsHandler(
 	r *Config,
 	L *ldif.LDIF,
-	E *dua.Entry,
+	E *ldif.GenericEntry,
 	fv reflect.Value,
 	sup string,
 ) (err error) {
@@ -91,9 +90,9 @@ func controlsHandler(
 
 	var ctrls Controls
 
-	makeCtrlEntry := func(entry *ldif.Entry) (ctrl Control) {
-		entry.Entry.UnmarshalFunc(&ctrl, func(
-			se *dua.Entry,
+	makeCtrlEntry := func(entry *ldif.GenericEntry) (ctrl Control) {
+		unmarshalFunc(entry, &ctrl, func(
+			se *ldif.GenericEntry,
 			ft reflect.StructField,
 			sv reflect.Value) error {
 			return r.dispatchUnmarshal(L, se, ft, sv)
@@ -103,16 +102,18 @@ func controlsHandler(
 
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
 		e := L.Entries[i]
-		if isTarget(e.Entry.DN) {
-			ocs := e.Entry.GetRawAttributeValues("objectClass")
+		dn := string(e.DN())
+		if isTarget(dn) {
+			ass := e.(ldif.GenericEntry)
+			ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
 			if bSliceInBSlices([]byte("goDirConfigControls"), ocs) {
-				ctrls.DN = []byte(e.Entry.DN)
+				ctrls.DN = []byte(dn)
 				continue
 			} else if !bSliceInBSlices([]byte("goDirConfigControl"), ocs) {
 				continue
 			}
 
-			ctrls.Control = append(ctrls.Control, makeCtrlEntry(e))
+			ctrls.Control = append(ctrls.Control, makeCtrlEntry(&ass))
 		}
 	}
 

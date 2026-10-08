@@ -4,8 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 var cnFeaturesConfigDN = []byte(`cn=features,cn=config`)
@@ -79,7 +78,7 @@ func (r Feature) String() string {
 func featuresHandler(
 	r *Config,
 	L *ldif.LDIF,
-	E *dua.Entry,
+	E *ldif.GenericEntry,
 	fv reflect.Value,
 	sup string,
 ) (err error) {
@@ -90,9 +89,9 @@ func featuresHandler(
 
 	var features Features
 
-	makeCtrlEntry := func(entry *ldif.Entry) (feature Feature) {
-		entry.Entry.UnmarshalFunc(&feature, func(
-			se *dua.Entry,
+	makeCtrlEntry := func(entry *ldif.GenericEntry) (feature Feature) {
+		unmarshalFunc(entry, &feature, func(
+			se *ldif.GenericEntry,
 			ft reflect.StructField,
 			sv reflect.Value) error {
 			return r.dispatchUnmarshal(L, se, ft, sv)
@@ -102,16 +101,17 @@ func featuresHandler(
 
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
 		e := L.Entries[i]
-		if isTarget(e.Entry.DN) {
-			ocs := e.Entry.GetRawAttributeValues("objectClass")
+		ass := e.(ldif.GenericEntry)
+		if isTarget(e.DN().String()) {
+			ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
 			if bSliceInBSlices([]byte("goDirConfigFeatures"), ocs) {
-				features.DN = []byte(e.Entry.DN)
+				features.DN = []byte(e.DN())
 				continue
 			} else if !bSliceInBSlices([]byte("goDirConfigFeature"), ocs) {
 				continue
 			}
 
-			features.Feature = append(features.Feature, makeCtrlEntry(e))
+			features.Feature = append(features.Feature, makeCtrlEntry(&ass))
 		}
 	}
 

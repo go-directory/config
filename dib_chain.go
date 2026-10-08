@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
+	"github.com/go-directory/util/ldif"
 )
 
 type Chaining struct {
@@ -89,17 +88,18 @@ func (r Chaining) String() string {
 
 func chainingHandler(
 	L *ldif.LDIF,
-	E *dua.Entry,
+	E *ldif.GenericEntry,
 	fv reflect.Value,
 	n string,
 ) (chains []Chaining, err error) {
 
 	chainSuffix := `,cn=chaining,cn=` + n + `,` + string(cnDIBConfigDN)
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
-		this := L.Entries[i].Entry
-		if this.DN != E.DN && strings.HasSuffix(this.DN, chainSuffix) {
+		this := L.Entries[i].(ldif.GenericEntry)
+		dn := this.DN().String()
+		if dn != E.DN().String() && strings.HasSuffix(dn, chainSuffix) {
 			var chain Chaining
-			if chain, err = buildChaining(this); err == nil {
+			if chain, err = buildChaining(&this); err == nil {
 				chains = append(chains, chain)
 			}
 		}
@@ -108,27 +108,27 @@ func chainingHandler(
 	return
 }
 
-func buildChaining(entry *dua.Entry) (chain Chaining, err error) {
-	ocs := entry.GetRawAttributeValues(`objectClass`)
+func buildChaining(entry *ldif.GenericEntry) (chain Chaining, err error) {
+	ocs := avs2b(entry.GetAttributeValues(ad(`objectClass`))...)
 	if !bSliceInBSlices([]byte(`goDirConfigChain`), ocs) {
 		err = errInvalidSyncClass
 		return
 	}
 
-	mut, _ := strconv.ParseBool(entry.GetAttributeValue(`configTLSClientMutual`))
+	mut, _ := strconv.ParseBool(entry.GetAttributeValue(ad(`configTLSClientMutual`)).String())
 
 	chain = Chaining{
-		DN:       []byte(entry.DN),
-		Name:     entry.GetRawAttributeValue(`cn`),
-		Desc:     entry.GetRawAttributeValue(`description`),
-		Endpoint: entry.GetRawAttributeValue(`configChainingEndpointURI`),
-		BindDN:   entry.GetRawAttributeValue(`configChainingSimpleBindDN`),
-		BindPW:   entry.GetRawAttributeValue(`configChainingSimpleBindPW`),
-		Mech:     entry.GetRawAttributeValue(`configChainingSASLMechanism`),
+		DN:       []byte(entry.DN()),
+		Name:     entry.GetAttributeValue(ad(`cn`)),
+		Desc:     entry.GetAttributeValue(ad(`description`)),
+		Endpoint: entry.GetAttributeValue(ad(`configChainingEndpointURI`)),
+		BindDN:   entry.GetAttributeValue(ad(`configChainingSimpleBindDN`)),
+		BindPW:   entry.GetAttributeValue(ad(`configChainingSimpleBindPW`)),
+		Mech:     entry.GetAttributeValue(ad(`configChainingSASLMechanism`)),
 		Mutual:   mut,
-		Cert:     entry.GetRawAttributeValue(`configTLSClientCert`),
-		Key:      entry.GetRawAttributeValue(`configTLSClientKey`),
-		Issuer:   entry.GetRawAttributeValue(`configTLSCA`),
+		Cert:     entry.GetAttributeValue(ad(`configTLSClientCert`)),
+		Key:      entry.GetAttributeValue(ad(`configTLSClientKey`)),
+		Issuer:   entry.GetAttributeValue(ad(`configTLSCA`)),
 	}
 
 	err = verifyChaining(chain)

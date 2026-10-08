@@ -6,9 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-directory/dua"
-	"github.com/go-directory/ldif"
 	"github.com/go-directory/syntax"
+	"github.com/go-directory/util/ldif"
 )
 
 type ReplicationAgreement struct {
@@ -130,17 +129,18 @@ func (r ReplicationAgreement) String() string {
 
 func syncHandler(
 	L *ldif.LDIF,
-	E *dua.Entry,
+	E *ldif.GenericEntry,
 	fv reflect.Value,
 	n string,
 ) (syncs []ReplicationAgreement, err error) {
 
 	syncSuffix := `,cn=sync,cn=` + n + `,` + string(cnDIBConfigDN)
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
-		this := L.Entries[i].Entry
-		if this.DN != E.DN && strings.HasSuffix(this.DN, syncSuffix) {
+		this := L.Entries[i].(ldif.GenericEntry)
+		dn := this.DN().String()
+		if dn != E.DN().String() && strings.HasSuffix(dn, syncSuffix) {
 			var agree ReplicationAgreement
-			if agree, err = buildAgreement(this); err == nil {
+			if agree, err = buildAgreement(&this); err == nil {
 				syncs = append(syncs, agree)
 			}
 		}
@@ -149,34 +149,34 @@ func syncHandler(
 	return
 }
 
-func buildAgreement(entry *dua.Entry) (agree ReplicationAgreement, err error) {
-	ocs := entry.GetRawAttributeValues(`objectClass`)
+func buildAgreement(entry *ldif.GenericEntry) (agree ReplicationAgreement, err error) {
+	ocs := avs2b(entry.GetAttributeValues(ad(`objectClass`))...)
 	if !bSliceInBSlices([]byte(`goDirConfigReplAgreement`), ocs) {
 		err = errInvalidSyncClass
 		return
 	}
 
-	push, _ := strconv.ParseBool(entry.GetAttributeValue(`configReplAgreementPush`))
-	mut, _ := strconv.ParseBool(entry.GetAttributeValue(`configTLSClientMutual`))
-	usetx, _ := strconv.ParseBool(entry.GetAttributeValue(`configReplAgreementUseTxLog`))
+	push, _ := strconv.ParseBool(entry.GetAttributeValue(ad(`configReplAgreementPush`)).String())
+	mut, _ := strconv.ParseBool(entry.GetAttributeValue(ad(`configTLSClientMutual`)).String())
+	usetx, _ := strconv.ParseBool(entry.GetAttributeValue(ad(`configReplAgreementUseTxLog`)).String())
 
 	agree = ReplicationAgreement{
-		DN:       []byte(entry.DN),
-		Name:     entry.GetRawAttributeValue(`cn`),
-		BaseDN:   entry.GetRawAttributeValue(`configReplAgreementBaseDN`),
-		Provider: entry.GetRawAttributeValue(`configReplAgreementProviderURI`),
-		Consumer: entry.GetRawAttributeValue(`configReplAgreementConsumerURI`),
-		BindDN:   entry.GetRawAttributeValue(`configReplAgreementSimpleBindDN`),
-		BindPW:   entry.GetRawAttributeValue(`configReplAgreementSimpleBindPW`),
-		Mech:     entry.GetRawAttributeValue(`configReplAgreementSASLMechanism`),
-		Filter:   entry.GetRawAttributeValue(`configReplAgreementSearchFilter`),
-		Attrs:    entry.GetRawAttributeValues(`configReplAgreementAttribute`),
+		DN:       []byte(entry.DN()),
+		Name:     entry.GetAttributeValue(ad(`cn`)),
+		BaseDN:   entry.GetAttributeValue(ad(`configReplAgreementBaseDN`)),
+		Provider: entry.GetAttributeValue(ad(`configReplAgreementProviderURI`)),
+		Consumer: entry.GetAttributeValue(ad(`configReplAgreementConsumerURI`)),
+		BindDN:   entry.GetAttributeValue(ad(`configReplAgreementSimpleBindDN`)),
+		BindPW:   entry.GetAttributeValue(ad(`configReplAgreementSimpleBindPW`)),
+		Mech:     entry.GetAttributeValue(ad(`configReplAgreementSASLMechanism`)),
+		Filter:   entry.GetAttributeValue(ad(`configReplAgreementSearchFilter`)),
+		Attrs:    avs2b(entry.GetAttributeValues(ad(`configReplAgreementAttribute`))...),
 		Mutual:   mut,
 		Push:     push,
 		Tx:       usetx,
-		Cert:     entry.GetRawAttributeValue(`configTLSClientCert`),
-		Key:      entry.GetRawAttributeValue(`configTLSClientKey`),
-		Issuer:   entry.GetRawAttributeValue(`configTLSCA`),
+		Cert:     entry.GetAttributeValue(ad(`configTLSClientCert`)),
+		Key:      entry.GetAttributeValue(ad(`configTLSClientKey`)),
+		Issuer:   entry.GetAttributeValue(ad(`configTLSCA`)),
 	}
 
 	err = verifyAgreement(agree)

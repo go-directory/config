@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -209,15 +208,15 @@ func verifyChainingEndpointURI(chain Chaining) (err error) {
 }
 
 var (
-	errInvalidChainingURI           = errors.New("Must specify chaining endpoint URI")
-	errMissingChainingName          = errors.New("Must specify a chain name using 'cn'")
-	errInvalidChainingRDN           = errors.New("cn must match RDN value")
-	errInvalidChainingClass         = errors.New("Chains must use 'goDirConfigChain' class")
-	errInvalidChainingDN            = errors.New("Invalid chain DN")
-	errMissingChainingTLSFile       = errors.New("Invalid chain TLS config; missing cert or key")
-	errInvalidChainingTLSAuth       = errors.New("Invalid chain TLS config; simple bind prohibited")
-	errMissingChainingTLSMutual     = errors.New("Invalid chain TLS config; mutual auth required")
-	errInvalidChainingAuth          = errors.New("Invalid chain config; simple bind requires DN and password")
-	errInvalidChainingSimpleMutual  = errors.New("Invalid chain auth config; mutual auth not applicable")
-	errInvalidChainingSimpleTLSFile = errors.New("Invalid chain auth config; client TLS requires SASL/EXTERNAL")
+	errInvalidChainingURI           = configError("Must specify chaining endpoint URI")
+	errMissingChainingName          = configError("Must specify a chain name using 'cn'")
+	errInvalidChainingRDN           = configError("cn must match RDN value")
+	errInvalidChainingClass         = configError("Chains must use 'goDirConfigChain' class")
+	errInvalidChainingDN            = configError("Invalid chain DN")
+	errMissingChainingTLSFile       = configError("Invalid chain TLS config; missing cert or key")
+	errInvalidChainingTLSAuth       = configError("Invalid chain TLS config; simple bind prohibited")
+	errMissingChainingTLSMutual     = configError("Invalid chain TLS config; mutual auth required")
+	errInvalidChainingAuth          = configError("Invalid chain config; simple bind requires DN and password")
+	errInvalidChainingSimpleMutual  = configError("Invalid chain auth config; mutual auth not applicable")
+	errInvalidChainingSimpleTLSFile = configError("Invalid chain auth config; client TLS requires SASL/EXTERNAL")
 )

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -302,21 +301,21 @@ func verifyAgreementProvConsURI(agree ReplicationAgreement) (err error) {
 }
 
 var (
-	errInvalidSyncURIPush       = errors.New("Cannot use Provider URI in PUSH mode")
-	errInvalidSyncURIPull       = errors.New("Cannot use Consumer URI in PULL mode")
-	errMissingSyncURIPush       = errors.New("Must specify Consumer URI in PUSH mode")
-	errMissingSyncURIPull       = errors.New("Must specify Provider URI in PULL mode")
-	errMissingSyncName          = errors.New("Must specify an agreement name using 'cn'")
-	errInvalidSyncRDN           = errors.New("cn must match RDN value")
-	errInvalidSyncClass         = errors.New("Agreements must use 'goDirConfigReplAgreement' class")
-	errInvalidSyncDN            = errors.New("Invalid agreement DN")
-	errMissingSyncClientTLSFile = errors.New("Invalid agreement client TLS config; missing cert or key")
-	errInvalidSyncClientTLSAuth = errors.New("Invalid agreement client TLS config; simple bind prohibited")
-	errMissingSyncTLSMutual     = errors.New("Invalid agreement client TLS config; mutual auth required")
-	errInvalidSyncAuth          = errors.New("Invalid agreement auth config; simple bind requires DN and password")
-	errInvalidSyncSimpleMutual  = errors.New("Invalid agreement auth config; mutual auth not applicable")
-	errInvalidSimpleTLSFile     = errors.New("Invalid agreement auth config; client TLS requires SASL/EXTERNAL")
-	errInvalidSyncScope         = errors.New("Invalid agreement search scope")
-	errInvalidSyncFilter        = errors.New("Invalid agreement search filter")
-	errInvalidSyncBaseDN        = errors.New("Missing or invalid agreement base DN")
+	errInvalidSyncURIPush       = configError("Cannot use Provider URI in PUSH mode")
+	errInvalidSyncURIPull       = configError("Cannot use Consumer URI in PULL mode")
+	errMissingSyncURIPush       = configError("Must specify Consumer URI in PUSH mode")
+	errMissingSyncURIPull       = configError("Must specify Provider URI in PULL mode")
+	errMissingSyncName          = configError("Must specify an agreement name using 'cn'")
+	errInvalidSyncRDN           = configError("cn must match RDN value")
+	errInvalidSyncClass         = configError("Agreements must use 'goDirConfigReplAgreement' class")
+	errInvalidSyncDN            = configError("Invalid agreement DN")
+	errMissingSyncClientTLSFile = configError("Invalid agreement client TLS config; missing cert or key")
+	errInvalidSyncClientTLSAuth = configError("Invalid agreement client TLS config; simple bind prohibited")
+	errMissingSyncTLSMutual     = configError("Invalid agreement client TLS config; mutual auth required")
+	errInvalidSyncAuth          = configError("Invalid agreement auth config; simple bind requires DN and password")
+	errInvalidSyncSimpleMutual  = configError("Invalid agreement auth config; mutual auth not applicable")
+	errInvalidSimpleTLSFile     = configError("Invalid agreement auth config; client TLS requires SASL/EXTERNAL")
+	errInvalidSyncScope         = configError("Invalid agreement search scope")
+	errInvalidSyncFilter        = configError("Invalid agreement search filter")
+	errInvalidSyncBaseDN        = configError("Missing or invalid agreement base DN")
 )

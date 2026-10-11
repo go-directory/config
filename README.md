@@ -1,6 +1,8 @@
 ## config
 
-Package config provides a makeshift `cn=config` abstraction. It is designed for use by [go-directory/dsa](https://github.com/go-directory/dsa) only.
+Package config provides a makeshift `cn=config` abstraction. It is designed specifically for use by the [Go Directory Project](https://github.com/go-directory).
+
+The package operates by parsing LDIF content, typically read from disk. Once parsed and deemed valid, the data is marshaled into an instance of `*config.Config`. This object, in turn, can be interrogated by upstream consuming packages such as [go-directory/dsa](https://github.com/go-directory/dsa) and [go-directory/dib](https://github.com/go-directory/dib) for the purpose of auto-configuration.
 
 # License
 

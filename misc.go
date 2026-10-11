@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"errors"
 	"reflect"
 	"strings"
 
@@ -70,16 +69,16 @@ func unmarshalFunc(
 	e *ldif.GenericEntry,
 	i any,
 	fn func(entry *ldif.GenericEntry, fieldType reflect.StructField, fieldValue reflect.Value) error,
-) error {
+) (err error) {
 	// Make sure it's a ptr
 	if vo := reflect.ValueOf(i).Kind(); vo != reflect.Pointer {
-		return errors.New("ldap: cannot use '" + vo.String() + "', expected pointer to a struct")
+		return configError("cannot use '", vo.String(), "', expected pointer to a struct")
 	}
 
 	sv, st := reflect.ValueOf(i).Elem(), reflect.TypeOf(i).Elem()
 	// Make sure it's pointing to a struct
 	if sv.Kind() != reflect.Struct {
-		return errors.New("ldap: expected pointer to a struct, got " + sv.Kind().String())
+		return configError("expected pointer to a struct, got ", sv.Kind().String())
 	}
 
 	for n := 0; n < st.NumField(); n++ {

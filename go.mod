@@ -3,13 +3,13 @@ module github.com/go-directory/config
 go 1.26.7
 
 require (
-	github.com/go-directory/protocol v0.0.0-20261007223149-02ee831d0ffe
-	github.com/go-directory/syntax v0.0.0-20261002045719-67b83129ca84
+	github.com/go-directory/protocol v0.0.0-20261011072137-5f955c615dbf
+	github.com/go-directory/syntax v0.0.0-20261011071904-67e6cdc90e04
 	github.com/go-directory/util v0.0.0-20261008071216-4bb8b76d50dd
 )
 
 require (
 	github.com/go-directory/common v0.0.0-20261011064511-8106c22684eb // indirect
-	github.com/go-directory/encoding v0.0.0-20260928073724-d80a838a63a3 // indirect
+	github.com/go-directory/encoding v0.0.0-20261011071436-d49e92f5b4a9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 )

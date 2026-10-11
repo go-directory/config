@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"errors"
 	"os"
 	"reflect"
 	"strconv"
@@ -13,7 +12,7 @@ import (
 
 func (r *Config) ParseLDIF(path string) (err error) {
 	if !strings.HasSuffix(path, `.ldif`) {
-		err = errors.New("Config '" + path + "' must end in '.ldif'")
+		err = configError("Config '", path, "' must end in '.ldif'")
 		return
 	}
 
@@ -29,7 +28,7 @@ func (r *Config) ReadBytes(data []byte) (err error) {
 	var L *ldif.LDIF
 	if L, err = ldif.Parse(string(data)); err == nil {
 		if cdn := L.Entries[0].DN().String(); cdn != string(cnConfigDN) {
-			err = errors.New("Unexpected config DN '" + cdn + "'")
+			err = configError("Unexpected config DN '", cdn, "'")
 			return
 		}
 	}

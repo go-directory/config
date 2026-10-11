@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"reflect"
 	"strings"
 
@@ -135,7 +134,7 @@ func indicesHandler(
 
 	isIndexed := func(a, w string) error {
 		if indices.isIndexed(a) || r.Indices.isIndexed(a) {
-			err = errors.New("Attribute '" + a + "' is already indexed " + w)
+			err = configError("Attribute '", a, "' is already indexed ", w)
 		}
 		return err
 	}
@@ -170,7 +169,7 @@ func indicesHandler(
 					r.Indices.Index = append(r.Indices.Index, idx)
 				}
 			} else {
-				err = errors.New("Unmatched Index element '" + dn + "'")
+				err = configError("Unmatched Index element '", dn, "'")
 			}
 		}
 		if len(indices.Index) > 0 && err == nil {

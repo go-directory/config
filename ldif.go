@@ -1,42 +1,60 @@
 package config
 
 import (
-	"bytes"
-	"os"
 	"reflect"
-	"strconv"
-	"strings"
 
 	"github.com/go-directory/util/ldif"
 )
 
-func (r *Config) ParseLDIF(path string) (err error) {
-	if !strings.HasSuffix(path, `.ldif`) {
-		err = configError("Config '", path, "' must end in '.ldif'")
+/*
+[ldif] type alias.
+*/
+type (
+	LDIF  = ldif.LDIF
+	Entry = ldif.GenericEntry
+)
+
+/*
+ParseLDIF returns an error following an attempt to read the path and filename
+and, using [Config.ReadBytes], parse the contents as LDIF. If successful, the
+data is marshaled into the receiver instance.
+
+If the file bytes are already acquired, one may instead use the [Config.ReadBytes]
+method directly.
+*/
+func (r *Config) ParseLDIF(path []byte) (err error) {
+	spath := string(path)
+	if !bHasSfx(path, []byte(`.ldif`)) {
+		err = configError("Config '", spath, "' must end in '.ldif'")
 		return
 	}
 
 	var data []byte
-	if data, err = os.ReadFile(path); err == nil {
+	if data, err = readFile(spath); err == nil {
 		err = r.ReadBytes(data)
 	}
 
 	return
 }
 
+/*
+ReadBytes returns an error following an attempt to read the input []byte
+instance and parse the contents as LDIF. If successful, the data is marshaled
+into the receiver instance.
+*/
 func (r *Config) ReadBytes(data []byte) (err error) {
-	var L *ldif.LDIF
+	var L *LDIF
 	if L, err = ldif.Parse(string(data)); err == nil {
-		if cdn := L.Entries[0].DN().String(); cdn != string(cnConfigDN) {
-			err = configError("Unexpected config DN '", cdn, "'")
+		if cdn := L.Entries[0].DN(); !beq(cdn,cnConfigDN) {
+			err = configError("Unexpected config DN '", string(cdn), "'")
 			return
 		}
 	}
 
 	*r = Config{}
-	ent := L.Entries[0].(ldif.GenericEntry)
+	ent := L.Entries[0].(Entry)
 	return unmarshalFunc(&ent, r, func(
-		e *ldif.GenericEntry,
+		e *Entry,
 		ft reflect.StructField,
 		fv reflect.Value) error {
 		return r.dispatchUnmarshal(L, e, ft, fv)
@@ -44,18 +62,18 @@ func (r *Config) ReadBytes(data []byte) (err error) {
 }
 
 func (r *Config) dispatchUnmarshal(
-	L *ldif.LDIF,
-	entry *ldif.GenericEntry,
+	L *LDIF,
+	entry *Entry,
 	ft reflect.StructField,
-	fv reflect.Value) error {
+	fv reflect.Value) (err error) {
 
 	if !fv.CanSet() {
-		return nil
+		return
 	}
 
 	if ft.Name == "DN" && ft.Tag.Get("ldap") == "" {
 		fv.SetBytes([]byte(entry.DN()))
-		return nil
+		return
 	}
 
 	if ft.Type.Kind() == reflect.Struct {
@@ -64,14 +82,14 @@ func (r *Config) dispatchUnmarshal(
 
 	tag := ft.Tag.Get("ldap")
 	if tag == "" {
-		return nil
+		return
 	}
 
 	tags := splitTags(tag)
 	attr := tags[0]
 	vals := entry.GetAttributeValues(ad(attr))
 	if len(vals) == 0 {
-		return nil
+		return
 	}
 	v := vals[0]
 
@@ -81,21 +99,34 @@ func (r *Config) dispatchUnmarshal(
 			fv.SetBytes(v)
 		}
 	case reflect.Int:
-		i, _ := strconv.Atoi(string(v))
+		i, _ := pint(string(v), 10, 64)
 		fv.SetInt(int64(i))
+	case reflect.Uint:
+		u, _ := puint(string(v), 10, 64)
+		fv.SetUint(u)
 	case reflect.Bool:
-		fv.SetBool(bytes.EqualFold(v, []byte("TRUE")))
+		fv.SetBool(beqf(v, bTrue))
 	case reflect.String:
 		fv.SetString(string(v))
+	default:
+		// handle special field values
+		switch fv.Interface().(type) {
+		case OctalMode:
+			var mode uint64
+			mode, err = puint(v.String(), 8, 64)
+			if err == nil {
+				fv.Set(reflect.ValueOf(OctalMode(mode)))
+			}
+		}
 	}
 
-	return nil
+	return
 }
 
-func (r *Config) structUnmarshal(L *ldif.LDIF, entry *ldif.GenericEntry, fv reflect.Value) error {
+func (r *Config) structUnmarshal(L *LDIF, entry *Entry, fv reflect.Value) (err error) {
 	t := fv.Type()
 
-	handlers := map[reflect.Type]func(*ldif.LDIF, *ldif.GenericEntry, reflect.Value, string) error{
+	handlers := map[reflect.Type]func(*LDIF, *Entry, reflect.Value, string) error{
 		reflect.TypeOf(Schemata{}):    r.schemataHandler,
 		reflect.TypeOf(Limits{}):      r.limitsHandler,
 		reflect.TypeOf(ListenerTLS{}): r.listenerTLSHandler,
@@ -107,44 +138,44 @@ func (r *Config) structUnmarshal(L *ldif.LDIF, entry *ldif.GenericEntry, fv refl
 	}
 
 	if h, ok := handlers[t]; ok {
-		return h(L, entry, fv, entry.DN().String())
+		err = h(L, entry, fv, entry.DN().String())
 	}
 
-	return nil
+	return
 }
 
-func (r *Config) schemataHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) error {
+func (r *Config) schemataHandler(L *LDIF, E *Entry, fv reflect.Value, _ string) error {
 	return schemataHandler(L, E, fv, string(cnSchemataConfigDN))
 }
 
-func (r *Config) limitsHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) error {
+func (r *Config) limitsHandler(L *LDIF, E *Entry, fv reflect.Value, _ string) error {
 	return limitsHandler(r, L, E, fv, string(cnLimitsConfigDN))
 }
 
-func (r *Config) clientTLSHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) error {
+func (r *Config) clientTLSHandler(L *LDIF, E *Entry, fv reflect.Value, _ string) error {
 	return clientTLSHandler(r, L, E, fv, ``) // dit specific
 }
 
-func (r *Config) listenerTLSHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, sup string) error {
+func (r *Config) listenerTLSHandler(L *LDIF, E *Entry, fv reflect.Value, sup string) error {
 	return listenerTLSHandler(r, L, E, fv, string(cnTLSConfigDN))
 }
 
-func (r *Config) indicesHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) error {
+func (r *Config) indicesHandler(L *LDIF, E *Entry, fv reflect.Value, _ string) error {
 	return indicesHandler(r, L, E, fv, ``)
 }
 
-func (r *Config) dibHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
+func (r *Config) dibHandler(L *LDIF, E *Entry, fv reflect.Value, _ string) (err error) {
 	return dibHandler(r, L, E, fv, ``)
 }
 
-func (r *Config) controlsHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
+func (r *Config) controlsHandler(L *LDIF, E *Entry, fv reflect.Value, _ string) (err error) {
 	return controlsHandler(r, L, E, fv, string(cnControlsConfigDN))
 }
 
-func (r *Config) featuresHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
+func (r *Config) featuresHandler(L *LDIF, E *Entry, fv reflect.Value, _ string) (err error) {
 	return featuresHandler(r, L, E, fv, string(cnFeaturesConfigDN))
 }
 
-func (r *Config) exopHandler(L *ldif.LDIF, E *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
+func (r *Config) exopHandler(L *LDIF, E *Entry, fv reflect.Value, _ string) (err error) {
 	return exopHandler(r, L, E, fv, string(cnExOpConfigDN))
 }

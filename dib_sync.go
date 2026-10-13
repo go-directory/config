@@ -2,13 +2,13 @@ package config
 
 import (
 	"reflect"
-	"strconv"
-	"strings"
-
-	"github.com/go-directory/syntax"
-	"github.com/go-directory/util/ldif"
 )
 
+/*
+ReplicationAgreement implements the storage of sync/repl parameters to
+be used by an instance of [DIT] to facilitate the replication of content
+between two DSAs.
+*/
 type ReplicationAgreement struct {
 	DN       []byte   // cn=<agreement name>,cn=sync,cn=<friendly dit>,cn=dib,cn=config
 	Name     []byte   `ldap:"configReplAgreementName"`          // agreement name
@@ -34,12 +34,15 @@ func (r ReplicationAgreement) isMTLS() bool {
 	return r.Mutual && len(r.Cert) > 0 && len(r.Key) > 0
 }
 
+/*
+String returns the string representation of the receiver instance.
+*/
 func (r ReplicationAgreement) String() string {
 	if len(r.DN) == 0 || len(r.Name) == 0 {
 		return ``
 	}
 
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -92,7 +95,7 @@ func (r ReplicationAgreement) String() string {
 	}
 
 	bld.WriteString("configReplAgreementSearchScope: ")
-	switch strings.ToLower(string(r.Scope)) {
+	switch string(blc(r.Scope)) {
 	case `base`, `baseobject`:
 		bld.WriteString("baseObject")
 	case `one`, `onelevel`, `singlelevel`:
@@ -127,17 +130,19 @@ func (r ReplicationAgreement) String() string {
 }
 
 func syncHandler(
-	L *ldif.LDIF,
-	E *ldif.GenericEntry,
+	L *LDIF,
+	E *Entry,
 	fv reflect.Value,
 	n string,
 ) (syncs []ReplicationAgreement, err error) {
 
-	syncSuffix := `,cn=sync,cn=` + n + `,` + string(cnDIBConfigDN)
+	edn := E.DN()
+	syncSuffix := []byte(`,cn=sync,cn=` + n + `,` + string(cnDIBConfigDN))
+
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
-		this := L.Entries[i].(ldif.GenericEntry)
-		dn := this.DN().String()
-		if dn != E.DN().String() && strings.HasSuffix(dn, syncSuffix) {
+		this := L.Entries[i].(Entry)
+		dn := this.DN()
+		if !beq(dn, edn) && bHasSfx(dn, syncSuffix) {
 			var agree ReplicationAgreement
 			if agree, err = buildAgreement(&this); err == nil {
 				syncs = append(syncs, agree)
@@ -148,20 +153,20 @@ func syncHandler(
 	return
 }
 
-func buildAgreement(entry *ldif.GenericEntry) (agree ReplicationAgreement, err error) {
-	ocs := avs2b(entry.GetAttributeValues(ad(`objectClass`))...)
-	if !bSliceInBSlices([]byte(`goDirConfigReplAgreement`), ocs) {
+func buildAgreement(entry *Entry) (agree ReplicationAgreement, err error) {
+	ocs := avs2b(entry.GetAttributeValues(adOC)...)
+	if !bSliceInBSlices(ocReplAgmt, ocs) {
 		err = errInvalidSyncClass
 		return
 	}
 
-	push, _ := strconv.ParseBool(entry.GetAttributeValue(ad(`configReplAgreementPush`)).String())
-	mut, _ := strconv.ParseBool(entry.GetAttributeValue(ad(`configTLSClientMutual`)).String())
-	usetx, _ := strconv.ParseBool(entry.GetAttributeValue(ad(`configReplAgreementUseTxLog`)).String())
+	push, _ := pbool(entry.GetAttributeValue(ad(`configReplAgreementPush`)).String())
+	mut, _ := pbool(entry.GetAttributeValue(ad(`configTLSClientMutual`)).String())
+	usetx, _ := pbool(entry.GetAttributeValue(ad(`configReplAgreementUseTxLog`)).String())
 
 	agree = ReplicationAgreement{
 		DN:       []byte(entry.DN()),
-		Name:     entry.GetAttributeValue(ad(`cn`)),
+		Name:     entry.GetAttributeValue(adCN),
 		BaseDN:   entry.GetAttributeValue(ad(`configReplAgreementBaseDN`)),
 		Provider: entry.GetAttributeValue(ad(`configReplAgreementProviderURI`)),
 		Consumer: entry.GetAttributeValue(ad(`configReplAgreementConsumerURI`)),
@@ -204,13 +209,13 @@ func verifyAgreementName(agree ReplicationAgreement) (err error) {
 		return
 	}
 
-	aname := string(agree.DN[3:])
-	i := strings.IndexRune(aname, ',')
+	aname := agree.DN[3:]
+	i := bidxr(aname, ',')
 	if i == -1 {
 		err = errInvalidSyncDN
 		return
 	}
-	if string(agree.Name) != aname[:i] {
+	if !beq(agree.Name, aname[:i]) {
 		err = errInvalidSyncRDN
 	}
 
@@ -218,21 +223,21 @@ func verifyAgreementName(agree ReplicationAgreement) (err error) {
 }
 
 func verifyAgreementSearchParams(agree ReplicationAgreement) (err error) {
-	_, err = syntax.NewDistinguishedName(agree.BaseDN, false)
+	_, err = newDistinguishedName(agree.BaseDN, false)
 	if err != nil || len(agree.BaseDN) == 0 {
 		err = errInvalidSyncBaseDN
 		return
 	}
 
 	if len(agree.Filter) > 0 {
-		if _, err = syntax.NewFilter(agree.Filter); err != nil {
+		if _, err = newFilter(agree.Filter); err != nil {
 			err = errInvalidSyncFilter
 			return
 		}
 	}
 
 	if len(agree.Scope) > 0 {
-		switch strings.ToLower(string(agree.Scope)) {
+		switch string(blc(agree.Scope)) {
 		case `base`, `baseobject`, `one`, `onelevel`,
 			`singlelevel`, `sub`, `subtree`,
 			`wholesubtree`:
@@ -251,7 +256,7 @@ func verifyAgreementAuth(agree ReplicationAgreement) (err error) {
 	certFound, keyFound := len(agree.Cert) > 0, len(agree.Key) > 0
 	sBFound, sPFound := len(agree.BindDN) > 0, len(agree.BindPW) > 0
 
-	switch strings.ToUpper(string(agree.Mech)) {
+	switch string(buc(agree.Mech)) {
 	case `EXTERNAL`:
 		if agree.Mutual {
 			if !certFound || !keyFound {

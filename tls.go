@@ -2,26 +2,31 @@ package config
 
 import (
 	"reflect"
-	"strconv"
-	"strings"
-
-	"github.com/go-directory/util/ldif"
 )
 
-var cnTLSConfigDN = []byte(`cn=tls,cn=config`)
-
+/*
+ListenerTLS implements a storage type meant to contain the parameters
+necessary for the DSA to support inbound TLS-protected requests. Only
+one instance of this type exists within the entire [Config] structure.
+*/
 type ListenerTLS struct {
 	DN     []byte
 	Cert   []byte `ldap:"configTLSCert"` // path to listener cert
 	Key    []byte `ldap:"configTLSKey"`  // path to listener key
 	Issuer []byte `ldap:"configTLSCA"`   // path to issuer cert/bundle, else use system trust
+	// TODO:
+	//  - Supported ciphers
 }
 
+/*
+String returns the string representation of the receiver instance.
+*/
 func (r ListenerTLS) String() string {
 	if len(r.DN) == 0 {
 		return ``
 	}
-	bld := &strings.Builder{}
+
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -51,6 +56,16 @@ func (r ListenerTLS) String() string {
 	return bld.String()
 }
 
+/*
+ClientTLS implements a storage type meant to contain the parameters
+for outbound TLS-protected requests associated with a single [DIT].
+
+This is used for certain distribution-related operations such as
+chaining, but is NOT used for replication ([ReplicationAgreement]
+contains its own TLS parameters).
+
+Each [DIT] may contain a maximum of one (1) instance of this type.
+*/
 type ClientTLS struct {
 	DN     []byte
 	Cert   []byte `ldap:"configTLSClientCert"`   // path to TLS client certificate
@@ -59,12 +74,15 @@ type ClientTLS struct {
 	Mutual bool   `ldap:"configTLSClientMutual"` // mutual auth?
 }
 
+/*
+String returns the string representation of the receiver instance.
+*/
 func (r ClientTLS) String() string {
 	if len(r.DN) == 0 {
 		return ``
 	}
 
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -97,23 +115,23 @@ func (r ClientTLS) String() string {
 
 func clientTLSHandler(
 	r *Config,
-	L *ldif.LDIF,
-	_ *ldif.GenericEntry,
+	L *LDIF,
+	_ *Entry,
 	fv reflect.Value,
 	sup string,
 ) error {
 	for _, e := range L.Entries {
-		ass := e.(ldif.GenericEntry)
-		dn := e.DN().String()
-		if strings.HasPrefix(dn, "cn=tls,") &&
-			strings.HasSuffix(dn, ","+string(cnDIBConfigDN)) {
+		ass := e.(Entry)
+		dn := e.DN()
+		if bHasPfx(dn, commaAppend(tlsRDN)) &&
+			bHasSfx(dn, cnDIBConfigDN) {
 			var tls ClientTLS
-			tls.DN = []byte(dn)
-			tls.Cert = ass.GetAttributeValue(ad(`configTLSClientCert`))
-			tls.Key = ass.GetAttributeValue(ad(`configTLSClientKey`))
-			tls.Issuer = ass.GetAttributeValue(ad(`configTLSCA`))
-			mut := ass.GetAttributeValue(ad(`configTLSClientMutual`))
-			b, _ := strconv.ParseBool(mut.String())
+			tls.DN = dn
+                        tls.Cert = ass.GetAttributeValue(adCCert)
+                        tls.Key = ass.GetAttributeValue(adCKey)
+                        tls.Issuer = ass.GetAttributeValue(adCA)
+                        mut := ass.GetAttributeValue(adMutual)
+			b, _ := pbool(mut.String())
 			tls.Mutual = b
 			fv.Set(reflect.ValueOf(tls))
 			break
@@ -124,20 +142,20 @@ func clientTLSHandler(
 
 func listenerTLSHandler(
 	r *Config,
-	L *ldif.LDIF,
-	_ *ldif.GenericEntry,
+	L *LDIF,
+	_ *Entry,
 	fv reflect.Value,
 	sup string,
 ) error {
 	for _, e := range L.Entries {
-		ass := e.(ldif.GenericEntry)
-		dn := e.DN().String()
-		if strings.EqualFold(dn, string(cnTLSConfigDN)) {
+		ass := e.(Entry)
+		dn := e.DN()
+		if beqf(dn, cnTLSConfigDN) {
 			var tls ListenerTLS
-			tls.DN = []byte(dn)
-			tls.Cert = ass.GetAttributeValue(ad(`configTLSListenerCert`))
-			tls.Key = ass.GetAttributeValue(ad(`configTLSListenerKey`))
-			tls.Issuer = ass.GetAttributeValue(ad(`configTLSCA`))
+			tls.DN = dn
+                        tls.Cert = ass.GetAttributeValue(adLCert)
+                        tls.Key = ass.GetAttributeValue(adLKey)
+                        tls.Issuer = ass.GetAttributeValue(adCA)
 			fv.Set(reflect.ValueOf(tls))
 			break
 		}

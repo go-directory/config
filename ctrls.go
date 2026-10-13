@@ -2,13 +2,12 @@ package config
 
 import (
 	"reflect"
-	"strings"
-
-	"github.com/go-directory/util/ldif"
 )
 
-var cnControlsConfigDN = []byte(`cn=controls,cn=config`)
-
+/*
+Controls facilitates the storage of slices of [Control], and represents the
+complete manifest of LDAP Controls supported by the DSA.
+*/
 type Controls struct {
 	// DN reflects either cn=indices,cn=config, or
 	// cn=indices,cn=<friendly dit>,cn=dib,cn=config
@@ -23,7 +22,7 @@ func (r Controls) String() string {
 	if len(r.DN) == 0 {
 		return ``
 	}
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -44,18 +43,25 @@ func (r Controls) String() string {
 	return bld.String()
 }
 
+/*
+Control implements the slice type of [Controls]. Each instance defines a
+single LDAP Control that is supported by the DSA in some manner.
+*/
 type Control struct {
 	DN   []byte // cn=<oid>,cn=controls,cn=config
 	Type []byte `ldap:"cn"`          // controlType (ldap control OID)
 	Desc []byte `ldap:"description"` // text description of control
 }
 
+/*
+String returns the string representation of the receiver instance.
+*/
 func (r Control) String() string {
 	if len(r.DN) == 0 || len(r.Type) == 0 {
 		return ``
 	}
 
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -78,21 +84,20 @@ func (r Control) String() string {
 
 func controlsHandler(
 	r *Config,
-	L *ldif.LDIF,
-	E *ldif.GenericEntry,
+	L *LDIF,
+	E *Entry,
 	fv reflect.Value,
 	sup string,
 ) (err error) {
 
-	isTarget := func(a string) bool {
-		return strings.HasSuffix(a, sup)
-	}
+	bsup := []byte(sup)
+	isTarget := func(a []byte) bool { return bHasSfx(a, bsup) }
 
 	var ctrls Controls
 
-	makeCtrlEntry := func(entry *ldif.GenericEntry) (ctrl Control) {
+	makeCtrlEntry := func(entry *Entry) (ctrl Control) {
 		unmarshalFunc(entry, &ctrl, func(
-			se *ldif.GenericEntry,
+			se *Entry,
 			ft reflect.StructField,
 			sv reflect.Value) error {
 			return r.dispatchUnmarshal(L, se, ft, sv)
@@ -102,14 +107,14 @@ func controlsHandler(
 
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
 		e := L.Entries[i]
-		dn := string(e.DN())
+		dn := e.DN()
 		if isTarget(dn) {
-			ass := e.(ldif.GenericEntry)
-			ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
-			if bSliceInBSlices([]byte("goDirConfigControls"), ocs) {
-				ctrls.DN = []byte(dn)
+			ass := e.(Entry)
+			ocs := avs2b(ass.GetAttributeValues(adOC)...)
+			if bSliceInBSlices(ocControls, ocs) {
+				ctrls.DN = dn
 				continue
-			} else if !bSliceInBSlices([]byte("goDirConfigControl"), ocs) {
+			} else if !bSliceInBSlices(ocControl, ocs) {
 				continue
 			}
 

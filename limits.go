@@ -1,27 +1,25 @@
 package config
 
 import (
-	"log"
 	"reflect"
-	"strconv"
-	"strings"
-
-	"github.com/go-directory/util/ldif"
 )
 
-var cnLimitsConfigDN = []byte(`cn=limits,cn=config`)
-
 type Limits struct {
+	// DN reflects either cn=limits,cn=config, or
+	// cn=limits,cn=<friendly dit>,cn=dib,cn=config
 	DN        []byte
-	SizeLimit int `ldap:"configSizeLimit"`
-	TimeLimit int `ldap:"configTimeLimit"`
+	SizeLimit uint `ldap:"configSizeLimit"`
+	TimeLimit uint `ldap:"configTimeLimit"`
 }
 
+/*
+String returns the string representation of the receiver instance.
+*/
 func (r Limits) String() string {
 	if len(r.DN) == 0 {
 		return ``
 	}
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -32,59 +30,84 @@ func (r Limits) String() string {
 	bld.WriteString("cn: limits")
 	bld.WriteRune(10)
 	bld.WriteString("configSizeLimit: ")
-	bld.WriteString(strconv.Itoa(r.SizeLimit))
+	bld.WriteString(fuint(uint64(r.SizeLimit), 10))
 	bld.WriteRune(10)
 	bld.WriteString("configTimeLimit: ")
-	bld.WriteString(strconv.Itoa(r.TimeLimit))
+	bld.WriteString(fuint(uint64(r.TimeLimit), 10))
 	bld.WriteRune(10)
 	bld.WriteRune(10)
 
 	return bld.String()
 }
 
+func isLimitTarget(a []byte) bool {
+	return bHasSfx(a, cnLimitsConfigDN) ||
+		(bctns(a, commaAppend(limitsRDN)) &&
+			bHasSfx(a, commaPrepend(cnDIBConfigDN)))
+}
+
+func isLocalLimit(c, p []byte) bool {
+	return isLimitTarget(c) && bHasSfx(c, p)
+}
+
+func isGlobalLimit(c []byte, r *Config) bool {
+	return beq(c, cnLimitsConfigDN) &&
+		len(r.Limits.DN) == 0
+}
+
 func limitsHandler(
 	r *Config,
-	L *ldif.LDIF,
-	E *ldif.GenericEntry,
+	L *LDIF,
+	E *Entry,
 	fv reflect.Value,
-	sup string,
-) error {
-	isTarget := func(a, c string) bool {
-		return strings.EqualFold(a, "cn=limits,cn="+
-			c+",cn=dib,cn=config")
+	_ string,
+) (err error) {
+
+	var lim Limits
+
+	makeLimits := func(dn []byte, entry Entry) (limits Limits, err error) {
+		sstr := entry.GetAttributeValue(adSLimit).String()
+		tstr := entry.GetAttributeValue(adTLimit).String()
+
+		var x uint64
+		if sstr != "" {
+			x, err = puint(sstr, 10, 64)
+			if err == nil {
+				limits.SizeLimit = uint(x)
+			}
+		}
+
+		if err == nil {
+			if tstr != "" {
+				x, err = puint(tstr, 10, 64)
+				if err == nil {
+					limits.TimeLimit = uint(x)
+					fv.Set(reflect.ValueOf(limits))
+				}
+			}
+		}
+
+		limits.DN = dn
+
+		return
 	}
 
-	global := sup == "cn=limits,cn=config"
-	mm := fv.Interface().(Limits)
-	if &mm != nil {
-		return nil // already done
-	}
-
-	log.Printf("GLOBAL: %t (%q)", global, sup)
-
-	if global {
-		var lim Limits
-		lim.SizeLimit, _ = strconv.Atoi(E.GetAttributeValue(ad("configSizeLimit")).String())
-		lim.TimeLimit, _ = strconv.Atoi(E.GetAttributeValue(ad("configTimeLimit")).String())
-		lim.DN = []byte(E.DN())
+	dn := []byte(E.DN())
+	if isLocal := isLocalLimit(dn, commaPrepend(cnDIBConfigDN)); isLocal && isLimitTarget(dn) {
+		lim, err = makeLimits(dn, *E)
 		fv.Set(reflect.ValueOf(lim))
-		return nil
+		return
 	}
 
-	for _, e := range L.Entries {
-		ass := e.(*ldif.GenericEntry)
-		dn := e.DN().String()
-		if isTarget(dn, sup) {
-			log.Printf("2nd path matched: %q", dn)
-			var lim Limits
-			lim.SizeLimit, _ = strconv.Atoi(ass.GetAttributeValue(ad("configSizeLimit")).String())
-			lim.TimeLimit, _ = strconv.Atoi(ass.GetAttributeValue(ad("configTimeLimit")).String())
-			lim.DN = []byte(dn)
+	for i := 0; i < len(L.Entries); i++ {
+		e := L.Entries[i].(Entry)
+		dn = e.DN()
+		if isGlobalLimit(dn, r) {
+			lim, err = makeLimits(dn, e)
 			fv.Set(reflect.ValueOf(lim))
 			break
-		} else {
-			log.Printf("Skip %q", dn)
 		}
 	}
-	return nil
+
+	return
 }

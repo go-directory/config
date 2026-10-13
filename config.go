@@ -5,10 +5,19 @@ config.go provides types and methods pertaining to an
 abstract structure serving as "cn=config".
 */
 
-import (
-	"strings"
-)
+/*
+Config represents the complete runtime configuration for the DSA. It
+contains instances of the following types:
 
+  - [Schemata]
+  - [Indices]
+  - [Limits]
+  - [Controls]
+  - [Features]
+  - [Extensions]
+  - [ListenerTLS]
+  - [DIB]
+*/
 type Config struct {
 	DN []byte
 	Schemata
@@ -32,7 +41,7 @@ func (r Config) String() string {
 		return ``
 	}
 
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -58,6 +67,3 @@ func (r Config) String() string {
 
 	return bld.String()
 }
-
-// cn=config and cn=config subtree literals
-var cnConfigDN = []byte(`cn=config`)

@@ -2,14 +2,13 @@ package config
 
 import (
 	"reflect"
-	"strconv"
-	"strings"
-
-	"github.com/go-directory/util/ldif"
 )
 
-var cnDIBConfigDN = []byte(`cn=dib,cn=config`)
-
+/*
+DIB facilitates the storage of slices of [DIT] instances. An instance
+of this type represents the complete manifest of naming contexts, and
+associated configuration parameters, to be honored by the DSA.
+*/
 type DIB struct {
 	DN   []byte // cn=dib,cn=config
 	DITs []DIT
@@ -23,7 +22,7 @@ func (r DIB) String() string {
 		return ``
 	}
 
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -41,12 +40,21 @@ func (r DIB) String() string {
 	return bld.String()
 }
 
+/*
+DIT implements the slice type of [DIB]. Each instance of this type represents
+a single naming context and all associated parameters to be honored by the DSA.
+*/
 type DIT struct {
-	DN           []byte // cn=<friendly dit>,cn=dib,cn=config
-	Name         []byte `ldap:"cn"` // friendly dit name, e.g.: "example"
-	Suffix       []byte `ldap:"configDITSuffix"`
-	ParentSuffix []byte `ldap:"configGlueParentSuffix"`
-	Type         int    `ldap:"configDITType"`
+	DN           []byte    // cn=<friendly dit>,cn=dib,cn=config
+	Name         []byte    `ldap:"cn"` // friendly dit name, e.g.: "example"
+	Suffix       []byte    `ldap:"configDITSuffix"`
+	ParentSuffix []byte    `ldap:"configGlueParentSuffix"`
+	Type         int       `ldap:"configDITType"`
+	Mode         OctalMode `ldap:"configDataFileMode"`
+	DataDir      []byte    `ldap:"configDataDir"`
+	DataFile     []byte
+	ReadOnly     bool `ldap:"configReadOnly"`
+	NoSync       bool `ldap:"configDBNoSync"`
 	Sync         []ReplicationAgreement
 	Chaining     []Chaining
 	ClientTLS
@@ -54,11 +62,14 @@ type DIT struct {
 	Indices
 }
 
+/*
+String returns the string representation of the receiver instance.
+*/
 func (r DIT) String() string {
 	if len(r.DN) == 0 {
 		return ``
 	}
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -78,7 +89,7 @@ func (r DIT) String() string {
 		bld.WriteRune(10)
 	}
 	bld.WriteString("configDITType: ")
-	bld.WriteString(strconv.Itoa(r.Type))
+	bld.WriteString(itoa(r.Type))
 	bld.WriteRune(10)
 
 	ct := &ClientTLS{}
@@ -138,25 +149,24 @@ func (r DIT) String() string {
 	return bld.String()
 }
 
-func dibHandler(r *Config, L *ldif.LDIF, _ *ldif.GenericEntry, fv reflect.Value, _ string) (err error) {
+func dibHandler(r *Config, L *LDIF, _ *Entry, fv reflect.Value, _ string) (err error) {
 	var dib DIB
-	sup := string(cnDIBConfigDN)
-
+	comma := []byte(`,`)
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
 		this := L.Entries[i]
-		dn := string(this.DN())
-		if !strings.HasSuffix(dn, sup) {
+		dn := this.DN()
+		if !bHasSfx(dn, cnDIBConfigDN) {
 			continue
 		}
-		if strings.EqualFold(dn, sup) {
-			dib.DN = []byte(dn)
+		if beqf(dn, cnDIBConfigDN) {
+			dib.DN = dn
 			continue
 		}
-		if strings.Count(dn, ",") == 2 {
+		if bcount(dn, comma) == 2 {
 			// only descend into immediate children
 			// of the "cn=dib,cn=config" context.
 			var dit DIT
-			ge := this.(ldif.GenericEntry)
+			ge := this.(Entry)
 			if dit, err = ditHandler(r, L, &ge, fv); err == nil {
 				dib.DITs = append(dib.DITs, dit)
 			}
@@ -170,38 +180,39 @@ func dibHandler(r *Config, L *ldif.LDIF, _ *ldif.GenericEntry, fv reflect.Value,
 
 func ditHandler(
 	r *Config,
-	L *ldif.LDIF,
-	E *ldif.GenericEntry,
+	L *LDIF,
+	E *Entry,
 	fv reflect.Value,
 ) (dit DIT, err error) {
 	unmarshalFunc(E, &dit, func(
-		se *ldif.GenericEntry,
+		se *Entry,
 		ft reflect.StructField,
 		sv reflect.Value) error {
 		return r.dispatchUnmarshal(L, se, ft, sv)
 	})
 
+	edn := E.DN()
 	for _, this := range L.Entries {
-		tdn := this.DN().String()
-		if tdn == E.DN().String() || !strings.HasSuffix(tdn, E.DN().String()) {
+		tdn := this.DN()
+		if tdn.Equal(edn) || !bHasSfx(tdn, edn) {
 			continue
 		}
 
-		ass := this.(ldif.GenericEntry)
+		ass := this.(Entry)
 
 		switch {
-		case strings.EqualFold(tdn, "cn=indices,"+E.DN().String()):
+		case beqf(tdn, joinDNComps(indicesRDN, edn)):
 			sv := reflect.ValueOf(&dit.Indices).Elem()
-			r.indicesHandler(L, &ass, sv, tdn)
-		case strings.EqualFold(tdn, "cn=limits,"+E.DN().String()):
+			r.indicesHandler(L, &ass, sv, tdn.String())
+		case beqf(tdn, joinDNComps(limitsRDN, edn)):
 			sv := reflect.ValueOf(&dit.Limits).Elem()
 			r.limitsHandler(L, &ass, sv, string(dit.Name))
-		case strings.HasPrefix(tdn, "cn=tls,"):
+		case bHasPfx(tdn, commaAppend(tlsRDN)):
 			sv := reflect.ValueOf(&dit.ClientTLS).Elem()
-			r.clientTLSHandler(L, &ass, sv, tdn)
-		case strings.HasPrefix(tdn, "cn=sync,"):
+			r.clientTLSHandler(L, &ass, sv, tdn.String())
+		case bHasPfx(tdn, commaAppend(syncRDN)):
 			dit.Sync, err = syncHandler(L, &ass, fv, string(dit.Name))
-		case strings.HasPrefix(tdn, "cn=chaining,"):
+		case bHasPfx(tdn, commaAppend(chainingRDN)):
 			dit.Chaining, err = chainingHandler(L, &ass, fv, string(dit.Name))
 		}
 	}

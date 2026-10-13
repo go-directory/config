@@ -4,6 +4,11 @@ import (
 	"github.com/go-directory/syntax"
 )
 
+var (
+	newDistinguishedName = syntax.NewDistinguishedName
+	newFilter            = syntax.NewFilter
+)
+
 func ad(x string) syntax.AttributeDescription { return syntax.AttributeDescription(x) }
 func av(x string) syntax.AttributeValue       { return syntax.AttributeValue(x) }
 

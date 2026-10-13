@@ -2,20 +2,20 @@ package config
 
 import (
 	"reflect"
-	"strconv"
-	"strings"
-
-	"github.com/go-directory/util/ldif"
 )
 
-var cnSchemataConfigDN = []byte(`cn=schemata,cn=config`)
-
+/*
+Schemata factilitates the storage of slices of [Schema].
+*/
 type Schemata struct {
 	Schema []Schema
 }
 
+/*
+String returns the string representation of the receiver instance.
+*/
 func (r Schemata) String() string {
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(cnSchemataConfigDN)
 	bld.WriteRune(10)
@@ -35,14 +35,21 @@ func (r Schemata) String() string {
 	return bld.String()
 }
 
+/*
+Schema implements the slice type of [Schemata], and serves as the
+storage type for a single schema context, e.g.: "cn=schema".
+*/
 type Schema struct {
 	DN   []byte // cn=<name>,<cnIndicesConfigDN>
 	Name []byte `ldap:"cn"`               // what will become "subschemaSubentry: cn=<schemaName>"
 	Meta bool   `ldap:"configMetaSchema"` // whether to create the meta form of "cn=<schemaName>"
 }
 
+/*
+String returns the string representation of the receiver instance.
+*/
 func (r Schema) String() string {
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -61,30 +68,31 @@ func (r Schema) String() string {
 	return bld.String()
 }
 
-func schemataHandler(L *ldif.LDIF, _ *ldif.GenericEntry, fv reflect.Value, sup string) error {
+func schemataHandler(L *LDIF, _ *Entry, fv reflect.Value, sup string) error {
 	var out Schemata
+	bsup := []byte(sup)
 	for _, e := range L.Entries {
-		ass := e.(ldif.GenericEntry)
-		dn := strings.ToLower(e.DN().String())
-		if !strings.HasSuffix(dn, sup) {
+		ass := e.(Entry)
+		dn := blc(e.DN())
+		if !bHasSfx(dn, bsup) {
 			continue
 		}
 
-		ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
-		if !(bSliceInBSlices([]byte("goDirConfigSchemata"), ocs) ||
-			bSliceInBSlices([]byte("goDirConfigSchema"), ocs)) {
+		ocs := avs2b(ass.GetAttributeValues(adOC)...)
+		if !(bSliceInBSlices(ocSchemata, ocs) ||
+			bSliceInBSlices(ocSchema, ocs)) {
 			continue
 		}
 
 		var sc Schema
 		unmarshalFunc(&ass, &sc, func(
-			se *ldif.GenericEntry,
+			se *Entry,
 			ft reflect.StructField,
 			sv reflect.Value) error {
 			tag := ft.Tag.Get("ldap")
 
 			if ft.Name == "Name" {
-				sc.DN = []byte("cn=" + ass.GetAttributeValue(ad("cn")).String() + "," + sup)
+				sc.DN = []byte("cn=" + ass.GetAttributeValue(adCN).String() + "," + sup)
 			}
 
 			tags := splitTags(tag)
@@ -101,10 +109,10 @@ func schemataHandler(L *ldif.LDIF, _ *ldif.GenericEntry, fv reflect.Value, sup s
 					sv.SetBytes(v)
 				}
 			case reflect.Bool:
-				pb, _ := strconv.ParseBool(string(v))
+				pb, _ := pbool(string(v))
 				sv.SetBool(pb)
 			case reflect.Int:
-				i, _ := strconv.Atoi(string(v))
+				i, _ := atoi(string(v))
 				fv.SetInt(int64(i))
 			case reflect.String:
 				sv.SetString(string(v))

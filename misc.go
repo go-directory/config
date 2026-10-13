@@ -2,10 +2,43 @@ package config
 
 import (
 	"bytes"
+	"os"
 	"reflect"
+	"strconv"
 	"strings"
+)
 
-	"github.com/go-directory/util/ldif"
+var (
+	atoi  = strconv.Atoi
+	itoa  = strconv.Itoa
+	pbool = strconv.ParseBool
+	puint = strconv.ParseUint
+	pint  = strconv.ParseInt
+	fuint = strconv.FormatUint
+	fint  = strconv.FormatInt
+)
+
+var (
+	blc     = bytes.ToLower
+	buc     = bytes.ToUpper
+	bctns   = bytes.Contains
+	bHasSfx = bytes.HasSuffix
+	bHasPfx = bytes.HasPrefix
+	bidxr   = bytes.IndexRune
+	beqf    = bytes.EqualFold
+	beq     = bytes.Equal
+	bTrimR  = bytes.TrimRight
+	bcount  = bytes.Count
+)
+
+var (
+	readFile = os.ReadFile
+	mkdir    = os.Mkdir
+)
+
+type (
+	strBuilder = strings.Builder
+	OctalMode  = os.FileMode
 )
 
 func bool2str(b bool) string {
@@ -66,33 +99,31 @@ func splitTags(tagData string) (tags []string) {
 }
 
 func unmarshalFunc(
-	e *ldif.GenericEntry,
+	e *Entry,
 	i any,
-	fn func(entry *ldif.GenericEntry, fieldType reflect.StructField, fieldValue reflect.Value) error,
+	fn func(entry *Entry, fieldType reflect.StructField, fieldValue reflect.Value) error,
 ) (err error) {
 	// Make sure it's a ptr
 	if vo := reflect.ValueOf(i).Kind(); vo != reflect.Pointer {
-		return configError("cannot use '", vo.String(), "', expected pointer to a struct")
+		err = configError("cannot use '", vo.String(), "', expected pointer to a struct")
+		return
 	}
 
 	sv, st := reflect.ValueOf(i).Elem(), reflect.TypeOf(i).Elem()
 	// Make sure it's pointing to a struct
 	if sv.Kind() != reflect.Struct {
-		return configError("expected pointer to a struct, got ", sv.Kind().String())
+		err = configError("expected pointer to a struct, got ", sv.Kind().String())
+		return
 	}
 
-	for n := 0; n < st.NumField(); n++ {
+	for n := 0; n < st.NumField() && err == nil; n++ {
 		fv, ft := sv.Field(n), st.Field(n)
 
-		// skip unexported fields
-		if ft.PkgPath != "" {
-			continue
-		}
-
-		if err := fn(e, ft, fv); err != nil {
-			return err
+		// only consume exported fields
+		if ft.PkgPath == "" {
+			err = fn(e, ft, fv)
 		}
 	}
 
-	return nil
+	return
 }

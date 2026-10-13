@@ -2,10 +2,6 @@ package config
 
 import (
 	"reflect"
-	"strconv"
-	"strings"
-
-	"github.com/go-directory/util/ldif"
 )
 
 type Chaining struct {
@@ -28,7 +24,7 @@ func (r Chaining) String() string {
 		return ``
 	}
 
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -61,7 +57,7 @@ func (r Chaining) String() string {
 
 	if len(r.Mech) > 0 {
 		bld.WriteString("configChainingSASLMechanism: ")
-		bld.WriteString(strings.ToUpper(string(r.Mech)))
+		bld.Write(buc(r.Mech))
 		bld.WriteRune(10)
 	}
 
@@ -86,17 +82,18 @@ func (r Chaining) String() string {
 }
 
 func chainingHandler(
-	L *ldif.LDIF,
-	E *ldif.GenericEntry,
+	L *LDIF,
+	E *Entry,
 	fv reflect.Value,
 	n string,
 ) (chains []Chaining, err error) {
 
-	chainSuffix := `,cn=chaining,cn=` + n + `,` + string(cnDIBConfigDN)
+	edn := E.DN()
+	chainSuffix := []byte(`,cn=chaining,cn=` + n + `,` + string(cnDIBConfigDN))
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
-		this := L.Entries[i].(ldif.GenericEntry)
-		dn := this.DN().String()
-		if dn != E.DN().String() && strings.HasSuffix(dn, chainSuffix) {
+		this := L.Entries[i].(Entry)
+		dn := this.DN()
+		if !beq(dn, edn) && bHasSfx(dn, chainSuffix) {
 			var chain Chaining
 			if chain, err = buildChaining(&this); err == nil {
 				chains = append(chains, chain)
@@ -107,19 +104,19 @@ func chainingHandler(
 	return
 }
 
-func buildChaining(entry *ldif.GenericEntry) (chain Chaining, err error) {
-	ocs := avs2b(entry.GetAttributeValues(ad(`objectClass`))...)
-	if !bSliceInBSlices([]byte(`goDirConfigChain`), ocs) {
+func buildChaining(entry *Entry) (chain Chaining, err error) {
+	ocs := avs2b(entry.GetAttributeValues(adOC)...)
+	if !bSliceInBSlices(ocChain, ocs) {
 		err = errInvalidSyncClass
 		return
 	}
 
-	mut, _ := strconv.ParseBool(entry.GetAttributeValue(ad(`configTLSClientMutual`)).String())
+	mut, _ := pbool(entry.GetAttributeValue(ad(`configTLSClientMutual`)).String())
 
 	chain = Chaining{
 		DN:       []byte(entry.DN()),
-		Name:     entry.GetAttributeValue(ad(`cn`)),
-		Desc:     entry.GetAttributeValue(ad(`description`)),
+		Name:     entry.GetAttributeValue(adCN),
+		Desc:     entry.GetAttributeValue(adDesc),
 		Endpoint: entry.GetAttributeValue(ad(`configChainingEndpointURI`)),
 		BindDN:   entry.GetAttributeValue(ad(`configChainingSimpleBindDN`)),
 		BindPW:   entry.GetAttributeValue(ad(`configChainingSimpleBindPW`)),
@@ -155,13 +152,13 @@ func verifyChainingName(chain Chaining) (err error) {
 		return
 	}
 
-	aname := string(chain.DN[3:])
-	i := strings.IndexRune(aname, ',')
+	aname := chain.DN[3:]
+	i := bidxr(aname, ',')
 	if i == -1 {
 		err = errInvalidChainingDN
 		return
 	}
-	if string(chain.Name) != aname[:i] {
+	if !beq(chain.Name, aname[:i]) {
 		err = errInvalidChainingRDN
 	}
 
@@ -173,7 +170,7 @@ func verifyChainingAuth(chain Chaining) (err error) {
 	certFound, keyFound := len(chain.Cert) > 0, len(chain.Key) > 0
 	sBFound, sPFound := len(chain.BindDN) > 0, len(chain.BindPW) > 0
 
-	switch strings.ToUpper(string(chain.Mech)) {
+	switch string(buc(chain.Mech)) {
 	case `EXTERNAL`:
 		if chain.Mutual {
 			if !certFound || !keyFound {

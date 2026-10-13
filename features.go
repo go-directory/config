@@ -2,12 +2,7 @@ package config
 
 import (
 	"reflect"
-	"strings"
-
-	"github.com/go-directory/util/ldif"
 )
-
-var cnFeaturesConfigDN = []byte(`cn=features,cn=config`)
 
 type Features struct {
 	// DN reflects either cn=features,cn=config
@@ -22,7 +17,7 @@ func (r Features) String() string {
 	if len(r.DN) == 0 {
 		return ``
 	}
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -54,7 +49,7 @@ func (r Feature) String() string {
 		return ``
 	}
 
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -77,21 +72,22 @@ func (r Feature) String() string {
 
 func featuresHandler(
 	r *Config,
-	L *ldif.LDIF,
-	E *ldif.GenericEntry,
+	L *LDIF,
+	E *Entry,
 	fv reflect.Value,
 	sup string,
 ) (err error) {
 
-	isTarget := func(a string) bool {
-		return strings.HasSuffix(a, sup)
+	bsup := []byte(sup)
+	isTarget := func(a []byte) bool {
+		return bHasSfx(a, bsup)
 	}
 
 	var features Features
 
-	makeCtrlEntry := func(entry *ldif.GenericEntry) (feature Feature) {
+	makeCtrlEntry := func(entry *Entry) (feature Feature) {
 		unmarshalFunc(entry, &feature, func(
-			se *ldif.GenericEntry,
+			se *Entry,
 			ft reflect.StructField,
 			sv reflect.Value) error {
 			return r.dispatchUnmarshal(L, se, ft, sv)
@@ -101,13 +97,14 @@ func featuresHandler(
 
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
 		e := L.Entries[i]
-		ass := e.(ldif.GenericEntry)
-		if isTarget(e.DN().String()) {
-			ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
-			if bSliceInBSlices([]byte("goDirConfigFeatures"), ocs) {
-				features.DN = []byte(e.DN())
+		ass := e.(Entry)
+		dn := e.DN()
+		if isTarget(dn) {
+			ocs := avs2b(ass.GetAttributeValues(adOC)...)
+			if bSliceInBSlices(ocFeatures, ocs) {
+				features.DN = dn
 				continue
-			} else if !bSliceInBSlices([]byte("goDirConfigFeature"), ocs) {
+			} else if !bSliceInBSlices(ocFeature, ocs) {
 				continue
 			}
 

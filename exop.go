@@ -2,12 +2,7 @@ package config
 
 import (
 	"reflect"
-	"strings"
-
-	"github.com/go-directory/util/ldif"
 )
-
-var cnExOpConfigDN = []byte(`cn=exop,cn=config`)
 
 type Extensions struct {
 	DN        []byte // cn=exop,cn=config
@@ -21,7 +16,7 @@ func (r Extensions) String() string {
 	if len(r.DN) == 0 {
 		return ``
 	}
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -53,7 +48,7 @@ func (r Extension) String() string {
 		return ``
 	}
 
-	bld := &strings.Builder{}
+	bld := &strBuilder{}
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
@@ -76,21 +71,20 @@ func (r Extension) String() string {
 
 func exopHandler(
 	r *Config,
-	L *ldif.LDIF,
-	E *ldif.GenericEntry,
+	L *LDIF,
+	E *Entry,
 	fv reflect.Value,
 	sup string,
 ) (err error) {
 
-	isTarget := func(a string) bool {
-		return strings.HasSuffix(a, sup)
-	}
+	bsup := []byte(sup)
+	isTarget := func(a []byte) bool { return bHasSfx(a, bsup) }
 
 	var exop Extensions
 
-	makeCtrlEntry := func(entry *ldif.GenericEntry) (extension Extension) {
+	makeCtrlEntry := func(entry *Entry) (extension Extension) {
 		unmarshalFunc(entry, &extension, func(
-			se *ldif.GenericEntry,
+			se *Entry,
 			ft reflect.StructField,
 			sv reflect.Value) error {
 			return r.dispatchUnmarshal(L, se, ft, sv)
@@ -100,13 +94,14 @@ func exopHandler(
 
 	for i := 0; i < len(L.Entries) && err == nil; i++ {
 		e := L.Entries[i]
-		ass := e.(ldif.GenericEntry)
-		if isTarget(e.DN().String()) {
-			ocs := avs2b(ass.GetAttributeValues(ad("objectClass"))...)
-			if bSliceInBSlices([]byte("goDirConfigExtensions"), ocs) {
-				exop.DN = []byte(ass.DN())
+		ass := e.(Entry)
+		dn := e.DN()
+		if isTarget(dn) {
+			ocs := avs2b(ass.GetAttributeValues(adOC)...)
+			if bSliceInBSlices(ocExtentions, ocs) {
+				exop.DN = dn
 				continue
-			} else if !bSliceInBSlices([]byte("goDirConfigExtension"), ocs) {
+			} else if !bSliceInBSlices(ocExtention, ocs) {
 				continue
 			}
 

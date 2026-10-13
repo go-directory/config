@@ -41,13 +41,32 @@ func (r DIB) String() string {
 }
 
 /*
+DIT returns the [DIT] instance bearing the input identifier.
+
+Case is not significant in the matching process.
+*/
+func (r DIB) DIT(id []byte) (DIT, bool) {
+	var dit DIT
+	var found bool
+
+	for i := 0; i < len(r.DITs) && !found; i++ {
+		if found = beqf(id, r.DITs[i].Name) ||
+			beqf(id, r.DITs[i].Suffix); found {
+			dit = r.DITs[i]
+		}
+	}
+
+	return dit, found
+}
+
+/*
 DIT implements the slice type of [DIB]. Each instance of this type represents
 a single naming context and all associated parameters to be honored by the DSA.
 */
 type DIT struct {
 	DN           []byte    // cn=<friendly dit>,cn=dib,cn=config
-	Name         []byte    `ldap:"cn"` // friendly dit name, e.g.: "example"
-	Suffix       []byte    `ldap:"configDITSuffix"`
+	Name         []byte    `ldap:"cn"`              // friendly dit name, e.g.: "example"
+	Suffix       []byte    `ldap:"configDITSuffix"` // e.g.: "dc=example,dc=com"
 	ParentSuffix []byte    `ldap:"configGlueParentSuffix"`
 	Type         int       `ldap:"configDITType"`
 	Mode         OctalMode `ldap:"configDataFileMode"`

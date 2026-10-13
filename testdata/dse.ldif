@@ -79,12 +79,55 @@ objectClass: top
 objectClass: goDirConfigDIB
 cn: dib
 
+# note: configDITSuffix MUST be a zero
+# (empty) value, as frontend holds the
+# rootDSE.
+dn: cn=frontend,cn=dib,cn=config
+objectClass: top
+objectClass: goDirConfigDIT
+cn: frontend
+configDITType: 1
+configDataFileMode: 0444
+configDITSuffix:
+configDITName: frontend
+
+dn: cn=schema,cn=dib,cn=config
+objectClass: top
+objectClass: goDirConfigDIT
+cn: schema
+configDITType: 1
+configDataFileMode: 0664
+configDITSuffix: cn=schema
+configDITName: schema
+
+dn: cn=config,cn=dib,cn=config
+objectClass: top
+objectClass: goDirConfigDIT
+cn: config
+configDITType: 1
+configDataFileMode: 0660
+configDITSuffix: cn=config
+configDITName: config
+
+dn: cn=state,cn=dib,cn=config
+objectClass: top
+objectClass: goDirConfigDIT
+cn: state
+configDITType: 1
+configDataFileMode: 0660
+configDITSuffix: cn=state
+configDITName: state
+
 dn: cn=example,cn=dib,cn=config
 objectClass: top
 objectClass: goDirConfigDIT
 cn: example
 configDITType: 2
+configDBNoSync: TRUE
+configDataFileMode: 0660
 configDITSuffix: dc=example,dc=com
+configDITName: example
+configDataDir: /tmp
 
 dn: cn=chaining,cn=example,cn=dib,cn=config
 objectClass: top
@@ -154,6 +197,9 @@ objectClass: top
 objectClass: goDirConfigDIT
 cn: people
 configDITType: 2
+configDataFileMode: 0660
+configDBNoSync: TRUE
+configDataDir: /tmp
 configDITSuffix: cn=People,dc=example,dc=com
 configGlueParentSuffix: dc=example,dc=com
 

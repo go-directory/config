@@ -2,7 +2,7 @@
 
 Package config provides a makeshift `cn=config` abstraction. It is designed specifically for use by the [Go Directory Project](https://github.com/go-directory).
 
-The package operates by parsing LDIF content, typically read from disk. Once parsed and deemed valid, the data is marshaled into an instance of `*config.Config`. This object, in turn, can be interrogated by upstream consuming packages such as [go-directory/dsa](https://github.com/go-directory/dsa) and [go-directory/dib](https://github.com/go-directory/dib) for the purpose of auto-configuration.
+The package operates by parsing LDIF content, typically read from disk. Once parsed and deemed valid, the data is marshaled via reflection into an instance of `*config.Config`. This object, in turn, can be interrogated by upstream consuming packages such as [go-directory/dsa](https://github.com/go-directory/dsa) and [go-directory/dib](https://github.com/go-directory/dib) for the purpose of centralized runtime configuration.
 
 # License
 
@@ -10,7 +10,7 @@ The config package is released under the terms of the MIT license. See the LICEN
 
 # Status
 
-This package is currently under heavy development and is considered EXPERIMENTAL. It is not yet intended for use in production environments.
+This package is currently under heavy development and is prone to breaking changes. It is not yet intended for use in any production environment.
 
 # Example
 
@@ -24,7 +24,7 @@ The file specified as the argument to `Config.ParseLDIF` must be a legal LDIF wi
   <check error>
 ```
 
-... or ...
+... or, if you already have the file bytes ...
 
 ```go
   c := &Config{}

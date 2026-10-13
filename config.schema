@@ -262,6 +262,46 @@ attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.32 NAME 'configTimeLimit'
   USAGE dSAOperation
   NO-USER-MODIFICATION
   X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.33 NAME 'configDataDir'
+  DESC 'Directory path of DIT data storage '
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseExactMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.34 NAME 'configDITName'
+  DESC 'Friendly name of the DIT'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseIgnoreMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.35 NAME 'configDBNoSync'
+  DESC 'Whether to perform so-called dirty writes to the backend; use with caution'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.36 NAME 'configDataFileMode'
+  DESC 'Octal privilege value defining rwx access for the data files of the DIT'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  EQUALITY caseIgnoreMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
+attributeTypes ( 1.3.6.1.4.1.56521.389.2.60.3.35 NAME 'configReadOnly'
+  DESC 'Whether the DIT is treated as read-only'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+  EQUALITY booleanMatch
+  SINGLE-VALUE
+  USAGE dSAOperation
+  NO-USER-MODIFICATION
+  X-ORIGIN 'Jesse Coretta' )
 
 ## 1.3.6.1.4.1.56521.389.2.60.5 (objectClasses)
 objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.1 NAME 'goDirConfig'
@@ -326,9 +366,14 @@ objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.8 NAME 'goDirConfigDIT'
   SUP top
   STRUCTURAL
   MUST ( cn
+       $ configDITName
        $ configDITType
        $ configDITSuffix )
-  MAY ( configGlueParentSuffix
+  MAY ( configDBNoSync
+      $ configDataDir
+      $ configDataFileMode
+      $ configGlueParentSuffix
+      $ configReadOnly
       $ description )
   X-ORIGIN 'Jesse Coretta' )
 objectClasses ( 1.3.6.1.4.1.56521.389.2.60.5.9 NAME 'goDirConfigIndices'

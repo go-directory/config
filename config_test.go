@@ -87,12 +87,12 @@ func verify(t *testing.T, r *Config) (err error) {
 
 		// register DIT as "seen"
 		seen[string(dit.Name)] = struct{}{}
-	//	
+	//
 	//	      t.Logf("name: %q [T:%d]\n", dit.Name, dit.Type)
 	//	      t.Logf("dn:   %q\n", dit.Suffix)
 	//	      t.Logf("db:   %q\n", dit.DataFile)
 	//	      t.Logf("mode: %s\n\n", dit.Mode)
-		
+
 	}
 
 	// confirm that certain expected built-in contexts, such as

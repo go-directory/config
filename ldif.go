@@ -45,7 +45,7 @@ into the receiver instance.
 func (r *Config) ReadBytes(data []byte) (err error) {
 	var L *LDIF
 	if L, err = ldif.Parse(string(data)); err == nil {
-		if cdn := L.Entries[0].DN(); !beq(cdn,cnConfigDN) {
+		if cdn := L.Entries[0].DN(); !beq(cdn, cnConfigDN) {
 			err = configError("Unexpected config DN '", string(cdn), "'")
 			return
 		}

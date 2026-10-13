@@ -2,6 +2,8 @@ package config
 
 import (
 	"reflect"
+
+	"github.com/go-directory/protocol/controls"
 )
 
 /*
@@ -105,17 +107,25 @@ func controlsHandler(
 		return
 	}
 
-	for i := 0; i < len(L.Entries) && err == nil; i++ {
+	for i := 0; i < len(L.Entries); i++ {
 		e := L.Entries[i]
 		dn := e.DN()
 		if isTarget(dn) {
 			ass := e.(Entry)
+
 			ocs := avs2b(ass.GetAttributeValues(adOC)...)
 			if bSliceInBSlices(ocControls, ocs) {
 				ctrls.DN = dn
 				continue
 			} else if !bSliceInBSlices(ocControl, ocs) {
 				continue
+			}
+
+			typ := string(ass.GetAttributeValue(adCN))
+			if _, supported := controls.Names[typ]; !supported {
+				err = configError("Support for control type '",
+					typ, "' not implemented")
+				break
 			}
 
 			ctrls.Control = append(ctrls.Control, makeCtrlEntry(&ass))

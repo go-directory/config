@@ -127,10 +127,10 @@ func clientTLSHandler(
 			bHasSfx(dn, cnDIBConfigDN) {
 			var tls ClientTLS
 			tls.DN = dn
-                        tls.Cert = ass.GetAttributeValue(adCCert)
-                        tls.Key = ass.GetAttributeValue(adCKey)
-                        tls.Issuer = ass.GetAttributeValue(adCA)
-                        mut := ass.GetAttributeValue(adMutual)
+			tls.Cert = ass.GetAttributeValue(adCCert)
+			tls.Key = ass.GetAttributeValue(adCKey)
+			tls.Issuer = ass.GetAttributeValue(adCA)
+			mut := ass.GetAttributeValue(adMutual)
 			b, _ := pbool(mut.String())
 			tls.Mutual = b
 			fv.Set(reflect.ValueOf(tls))
@@ -153,9 +153,9 @@ func listenerTLSHandler(
 		if beqf(dn, cnTLSConfigDN) {
 			var tls ListenerTLS
 			tls.DN = dn
-                        tls.Cert = ass.GetAttributeValue(adLCert)
-                        tls.Key = ass.GetAttributeValue(adLKey)
-                        tls.Issuer = ass.GetAttributeValue(adCA)
+			tls.Cert = ass.GetAttributeValue(adLCert)
+			tls.Key = ass.GetAttributeValue(adLKey)
+			tls.Issuer = ass.GetAttributeValue(adCA)
 			fv.Set(reflect.ValueOf(tls))
 			break
 		}

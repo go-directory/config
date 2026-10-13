@@ -26,7 +26,6 @@ var (
 	indicesRDN  = []byte("cn=indices")
 	tlsRDN      = []byte("cn=tls")
 	syncRDN     = []byte("cn=sync")
-	
 )
 
 /*
@@ -46,7 +45,7 @@ var (
 	ocFeatures   = []byte("goDirConfigFeatures")
 	ocIndex      = []byte("goDirConfigIndex")
 	ocIndices    = []byte("goDirConfigIndices")
-	ocReplAgmt   = []byte("goDirConfigReplAgreement")	
+	ocReplAgmt   = []byte("goDirConfigReplAgreement")
 	ocSchema     = []byte("goDirConfigSchema")
 	ocSchemata   = []byte("goDirConfigSchemata")
 	ocTLS        = []byte("goDirConfigTLS")
@@ -80,6 +79,6 @@ var (
 func commaAppend(value []byte) []byte  { return append(value, comma...) }
 func commaPrepend(value []byte) []byte { return append(comma, value...) }
 func joinDNComps(leaf, suffix []byte) []byte {
-        leaf = append(leaf, comma...)
-        return append(leaf, suffix...)
+	leaf = append(leaf, comma...)
+	return append(leaf, suffix...)
 }

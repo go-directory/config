@@ -1,15 +1,15 @@
 module github.com/go-directory/config
 
-go 1.26.7
+go 1.27.2
 
 require (
-	github.com/go-directory/protocol v0.0.0-20261013081625-70fa7068aa56
-	github.com/go-directory/syntax v0.0.0-20261011093021-e981ae498c2c
+	github.com/go-directory/protocol v0.0.0-20261015063503-5d25d8a5e013
+	github.com/go-directory/syntax v0.0.0-20261015063208-e3542debb539
 	github.com/go-directory/util v0.0.0-20261011093350-9d20f558f102
 )
 
 require (
-	github.com/go-directory/common v0.0.0-20261011092812-ee1a68d2b0cb // indirect
-	github.com/go-directory/encoding v0.0.0-20261011092854-e58281c8ca90 // indirect
+	github.com/go-directory/common v0.0.0-20261015062816-e8d71838f720 // indirect
+	github.com/go-directory/encoding v0.0.0-20261015063109-52bfbd1e4011 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 )

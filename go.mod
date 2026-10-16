@@ -3,7 +3,7 @@ module github.com/go-directory/config
 go 1.27.2
 
 require (
-	github.com/go-directory/protocol v0.0.0-20261015063503-5d25d8a5e013
+	github.com/go-directory/protocol v0.0.0-20261016122910-39b963d94649
 	github.com/go-directory/syntax v0.0.0-20261015063208-e3542debb539
 	github.com/go-directory/util v0.0.0-20261011093350-9d20f558f102
 )

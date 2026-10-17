@@ -12,6 +12,10 @@ The config package is released under the terms of the MIT license. See the LICEN
 
 This package is currently under heavy development and is prone to breaking changes. It is not yet intended for use in any production environment.
 
+# Schema
+
+The official [Go Directory Project](https://github.com/go-directory) config schema can be found [here](https://github.com/go-directory/files/blob/main/schema/50-gd/00-config.schema).
+
 # Example
 
 An instance of `*config.Config` is populated following a call to the `Config.ParseLDIF` or `Config.ReadBytes` methods.

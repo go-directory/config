@@ -158,6 +158,7 @@ configDataFileMode: 0660
 configDITSuffix: dc=example,dc=com
 configDITName: example
 configDataDir: /tmp
+configSubordinatesPolicy: 3
 
 dn: cn=chaining,cn=example,cn=dib,cn=config
 objectClass: top
@@ -232,6 +233,7 @@ configDBNoSync: TRUE
 configDataDir: /tmp
 configDITSuffix: cn=People,dc=example,dc=com
 configGlueParentSuffix: dc=example,dc=com
+configSubordinatesPolicy: 2
 
 dn: cn=tls,cn=people,cn=dib,cn=config
 objectClass: top

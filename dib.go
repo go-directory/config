@@ -69,6 +69,7 @@ type DIT struct {
 	Suffix       []byte    `ldap:"configDITSuffix"` // e.g.: "dc=example,dc=com"
 	ParentSuffix []byte    `ldap:"configGlueParentSuffix"`
 	Type         int       `ldap:"configDITType"`
+	SubPol       int       `ldap:"configSubordinatesPolicy"`
 	Mode         OctalMode `ldap:"configDataFileMode"`
 	DataDir      []byte    `ldap:"configDataDir"`
 	DataFile     []byte
@@ -102,6 +103,11 @@ func (r DIT) String() string {
 	bld.WriteString("configDITSuffix: ")
 	bld.Write(r.Suffix)
 	bld.WriteRune(10)
+	if r.SubPol > 0 {
+		bld.WriteString("configSubordinatesPolicy: ")
+		bld.WriteString(itoa(r.SubPol))
+		bld.WriteRune(10)
+	}
 	if len(r.ParentSuffix) > 0 {
 		bld.WriteString("configGlueParentSuffix: ")
 		bld.Write(r.ParentSuffix)

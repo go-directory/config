@@ -4,7 +4,8 @@ import (
 	"github.com/go-directory/common"
 )
 
-func configError(msg ...string) error {
-	m := append([]string{"Config error: "}, msg...)
-	return common.ErrorConfig.New(m...)
+func configError(msg ...string) (err commonErr) {
+	err = common.ErrorConfig.New(msg...)
+	err.SetHeader("config:")
+	return
 }

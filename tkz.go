@@ -7,7 +7,7 @@ var (
 	cnConfigDN         = []byte(`cn=config`)
 	cnControlsConfigDN = []byte(`cn=controls,cn=config`)
 	cnDIBConfigDN      = []byte(`cn=dib,cn=config`)
-	cnExOpConfigDN     = []byte(`cn=exop,cn=config`)
+	cnExOpConfigDN     = []byte(`cn=extensions,cn=config`)
 	cnFeaturesConfigDN = []byte(`cn=features,cn=config`)
 	cnIndicesConfigDN  = []byte(`cn=indices,cn=config`)
 	cnLimitsConfigDN   = []byte(`cn=limits,cn=config`)

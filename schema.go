@@ -36,13 +36,37 @@ func (r Schemata) String() string {
 }
 
 /*
+Get returns an instance of [Schema] alongside a presence-indicative
+Boolean value following an iterative scan for a matching schema DN.
+
+Case is not significant in the matching process.
+*/
+func (r Schemata) Get(dn []byte) (Schema, bool) {
+	var found bool
+	var sch Schema
+	for i := 0; i < len(r.Schema); i++ {
+		if found = beqf(r.Schema[i].Suffix(), dn); found {
+			sch = r.Schema[i]
+			break
+		}
+	}
+
+	return sch, found
+}
+
+/*
 Schema implements the slice type of [Schemata], and serves as the
 storage type for a single schema context, e.g.: "cn=schema".
 */
 type Schema struct {
-	DN   []byte // cn=<name>,<cnIndicesConfigDN>
-	Name []byte `ldap:"cn"`               // what will become "subschemaSubentry: cn=<schemaName>"
-	Meta bool   `ldap:"configMetaSchema"` // whether to create the meta form of "cn=<schemaName>"
+	DN            []byte // cn=<name>,<cnIndicesConfigDN>
+	Name          []byte `ldap:"cn"`                        // what will become "subschemaSubentry: cn=<schemaName>"
+	Authoritative bool   `ldap:"configSchemaAuthoritative"` // whether this schema is the authoritative source
+	Meta          bool   `ldap:"configMetaSchema"`          // whether to create the meta form of "cn=<schemaName>"
+}
+
+func (r Schema) Suffix() []byte {
+	return append([]byte(`cn=`), r.Name...)
 }
 
 /*
@@ -120,7 +144,9 @@ func schemataHandler(L *LDIF, _ *Entry, fv reflect.Value, sup string) error {
 			return nil
 		})
 
-		out.Schema = append(out.Schema, sc)
+		if !beqf(sc.Name, []byte("schemata")) {
+			out.Schema = append(out.Schema, sc)
+		}
 	}
 
 	fv.Set(reflect.ValueOf(out))

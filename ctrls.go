@@ -50,9 +50,10 @@ Control implements the slice type of [Controls]. Each instance defines a
 single LDAP Control that is supported by the DSA in some manner.
 */
 type Control struct {
-	DN   []byte // cn=<oid>,cn=controls,cn=config
-	Type []byte `ldap:"cn"`          // controlType (ldap control OID)
-	Desc []byte `ldap:"description"` // text description of control
+	DN       []byte // cn=<oid>,cn=controls,cn=config
+	Type     []byte `ldap:"cn"`          // controlType (ldap control OID)
+	Desc     []byte `ldap:"description"` // text description of control
+	Disabled bool   `ldap:"configDisabled"`
 }
 
 /*
@@ -78,6 +79,11 @@ func (r Control) String() string {
 	if len(r.Desc) > 0 {
 		bld.WriteString("description: ")
 		bld.Write(r.Desc)
+		bld.WriteRune(10)
+	}
+
+	if r.Disabled {
+		bld.WriteString("configDisabled: TRUE")
 		bld.WriteRune(10)
 	}
 
@@ -123,9 +129,10 @@ func controlsHandler(
 
 			typ := string(ass.GetAttributeValue(adCN))
 			if _, supported := controls.Names[typ]; !supported {
-				err = configError("Support for control type '",
-					typ, "' not implemented")
-				break
+				ass.Attributes = append(ass.Attributes, entryAttr{Type: ad(`configDisabled`), Vals: []attributeValue{av(`TRUE`)}})
+				//err = configError("Support for control type '",
+				//	typ, "' not implemented")
+				//break
 			}
 
 			ctrls.Control = append(ctrls.Control, makeCtrlEntry(&ass))

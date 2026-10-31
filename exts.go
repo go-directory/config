@@ -5,7 +5,7 @@ import (
 )
 
 type Extensions struct {
-	DN        []byte // cn=exop,cn=config
+	DN        []byte // cn=extensions,cn=config
 	Extension []Extension
 }
 
@@ -24,7 +24,7 @@ func (r Extensions) String() string {
 	bld.WriteRune(10)
 	bld.WriteString("objectClass: goDirConfigExtensions")
 	bld.WriteRune(10)
-	bld.WriteString("cn: exop")
+	bld.WriteString("cn: extensions")
 	bld.WriteRune(10)
 	bld.WriteString("description: LDAP extended operations")
 	bld.WriteRune(10)
@@ -38,9 +38,10 @@ func (r Extensions) String() string {
 }
 
 type Extension struct {
-	DN   []byte // cn=<oid>,cn=exop,cn=config
-	Type []byte `ldap:"cn"`          // extension (ldap ExOp OID)
-	Desc []byte `ldap:"description"` // text description of exop
+	DN       []byte // cn=<oid>,cn=extensions,cn=config
+	Type     []byte `ldap:"cn"`          // extension (ldap ExOp OID)
+	Desc     []byte `ldap:"description"` // text description of extensions
+	Disabled bool   `ldap:"configDisabled"`
 }
 
 func (r Extension) String() string {
@@ -63,6 +64,11 @@ func (r Extension) String() string {
 	if len(r.Desc) > 0 {
 		bld.WriteString("description: ")
 		bld.Write(r.Desc)
+		bld.WriteRune(10)
+	}
+
+	if r.Disabled {
+		bld.WriteString("configDisabled: TRUE")
 		bld.WriteRune(10)
 	}
 

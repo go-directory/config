@@ -73,6 +73,7 @@ type DIT struct {
 	Mode         OctalMode `ldap:"configDataFileMode"`
 	DataDir      []byte    `ldap:"configDataDir"`
 	DataFile     []byte
+	Advertise    bool `ldap:"configAdvertiseGlueSuffix"`
 	ReadOnly     bool `ldap:"configReadOnly"`
 	NoSync       bool `ldap:"configDBNoSync"`
 	Sync         []ReplicationAgreement

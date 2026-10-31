@@ -30,3 +30,5 @@ github.com/go-directory/util v0.0.0-20261017091812-cfdc30ea6373 h1:p81bPOT0z7fGc
 github.com/go-directory/util v0.0.0-20261017091812-cfdc30ea6373/go.mod h1:SqHABJh9xlitfAfI23U53ZI26QlFlpHbI5whXNCbhzQ=
 github.com/go-directory/util v0.0.0-20261019065324-d55b7d345390 h1:wYHdyiBVxi3m85t2aWnG+Xj5yPs11qLNOZaXBEILjdI=
 github.com/go-directory/util v0.0.0-20261019065324-d55b7d345390/go.mod h1:68B5R0YoYpvRijiLeNF6OiBbJdGe5ki18D/SyoR/pdY=
+github.com/go-directory/util v0.0.0-20261031090848-7626dd173ad2 h1:qH2ay3DseMCWlMbHp4YzJwLK7KE9/g9ssSjL211Sup8=
+github.com/go-directory/util v0.0.0-20261031090848-7626dd173ad2/go.mod h1:rPpEF/yJYPFq/3JyXF5Q872DckbsHL3Jdy5oXQtvzqY=

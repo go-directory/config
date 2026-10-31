@@ -39,9 +39,10 @@ func (r Features) String() string {
 }
 
 type Feature struct {
-	DN   []byte // cn=<oid>,cn=features,cn=config
-	Type []byte `ldap:"cn"`          // feature (ldap supportedFeature OID)
-	Desc []byte `ldap:"description"` // text description of feature
+	DN       []byte // cn=<oid>,cn=features,cn=config
+	Type     []byte `ldap:"cn"`          // feature (ldap supportedFeature OID)
+	Desc     []byte `ldap:"description"` // text description of feature
+	Disabled bool   `ldap:"configDisabled"`
 }
 
 func (r Feature) String() string {
@@ -64,6 +65,11 @@ func (r Feature) String() string {
 	if len(r.Desc) > 0 {
 		bld.WriteString("description: ")
 		bld.Write(r.Desc)
+		bld.WriteRune(10)
+	}
+
+	if r.Disabled {
+		bld.WriteString("configDisabled: TRUE")
 		bld.WriteRune(10)
 	}
 

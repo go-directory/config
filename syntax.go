@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/go-directory/protocol"
 	"github.com/go-directory/syntax"
 )
 
@@ -9,8 +10,12 @@ var (
 	newFilter            = syntax.NewFilter
 )
 
-func ad(x string) syntax.AttributeDescription { return syntax.AttributeDescription(x) }
-func av(x string) syntax.AttributeValue       { return syntax.AttributeValue(x) }
+type entryAttr = protocol.EntryAttribute
+type attributeValue = syntax.AttributeValue
+type attributeDesc = syntax.AttributeDescription
+
+func ad(x string) syntax.AttributeDescription { return attributeDesc(x) }
+func av(x string) syntax.AttributeValue       { return attributeValue(x) }
 
 func avs2b(av ...syntax.AttributeValue) [][]byte {
 	var z [][]byte

@@ -2,7 +2,7 @@ dn: cn=config
 objectClass: top
 objectClass: goDirConfig
 cn: config
-configDSEPath: /path/to/dse.ldif
+configDSEPath: /path/to/go-directory/etc/dse.ldif
 
 dn: cn=controls,cn=config
 objectClass: top
@@ -15,6 +15,7 @@ objectClass: top
 objectClass: goDirConfigControl
 cn: 1.2.840.113556.1.4.319
 description: Paged Results Control
+configDisabled: TRUE
 
 dn: cn=1.2.840.113556.1.4.805,cn=controls,cn=config
 objectClass: top
@@ -26,55 +27,186 @@ dn: cn=1.3.6.1.4.1.4203.1.10.1,cn=controls,cn=config
 objectClass: top
 objectClass: goDirConfigControl
 cn: 1.3.6.1.4.1.4203.1.10.1
-description: Subentries Control
+description: RFC 3671 Subentries Control
+
+dn: cn=1.3.6.1.1.12,cn=controls,cn=config
+objectClass: top
+objectClass: goDirConfigControl
+cn: 1.3.6.1.1.12
+description: RFC 4528 Assertion Control
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.4.1.4203.1.9.1.1,cn=controls,cn=config
+objectClass: top
+objectClass: goDirConfigControl
+cn: 1.3.6.1.4.1.4203.1.9.1.1
+description: RFC 4533 Content Synchronization Control
+configDisabled: TRUE
+
+dn: cn=2.16.840.1.113730.3.4.18,cn=controls,cn=config
+objectClass: top
+objectClass: goDirConfigControl
+cn: 2.16.840.1.113730.3.4.18
+description: draft-weltman-ldapv3-proxy Proxy Authorization v2
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.1.22,cn=controls,cn=config
+objectClass: top
+objectClass: goDirConfigControl
+cn: 1.3.6.1.1.22
+description: RFC 6171 Don't Use Copy Control
+configDisabled: TRUE
+
+dn: cn=1.2.826.0.1.3344810.2.3,cn=controls,cn=config
+objectClass: top
+objectClass: goDirConfigControl
+cn: 1.2.826.0.1.3344810.2.3
+description: RFC 6171 Matched Values Control
+
+dn: cn=1.3.6.1.1.13.1,cn=controls,cn=config
+objectClass: top
+objectClass: goDirConfigControl
+cn: 1.3.6.1.1.13.1
+description: RFC 4527 Pre-read Request and Response Control
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.1.13.2,cn=controls,cn=config
+objectClass: top
+objectClass: goDirConfigControl
+cn: 1.3.6.1.1.13.2
+description: RFC 4527 Post-read Request and Response Control
+configDisabled: TRUE
 
 dn: cn=2.16.840.1.113730.3.4.2,cn=controls,cn=config
 objectClass: top
 objectClass: goDirConfigControl
 cn: 2.16.840.1.113730.3.4.2
-description: Manage DSA IT Control
-
-dn: cn=1.3.6.1.4.1.4203.1.11.3,cn=controls,cn=config
-objectClass: top
-objectClass: goDirConfigControl
-cn: 1.3.6.1.4.1.4203.1.11.3
-description: Who Am I? Control
+description: RFC 3296 Manage DSA IT Control
+configDisabled: TRUE
 
 dn: cn=1.2.840.113556.1.4.473,cn=controls,cn=config
 objectClass: top
 objectClass: goDirConfigControl
 cn: 1.2.840.113556.1.4.473
 description: Server Side Sorting Control
+configDisabled: TRUE
 
 dn: cn=1.2.840.113556.1.4.474,cn=controls,cn=config
 objectClass: top
 objectClass: goDirConfigControl
 cn: 1.2.840.113556.1.4.474
 description: Server Side Sorting Result Control
+configDisabled: TRUE
 
 dn: cn=features,cn=config
 objectClass: top
 objectClass: goDirConfigFeatures
-cn: controls
+cn: features
 description: supportedFeatures
 
-dn: cn=1.3.6.1.4.1.1466.20037,cn=features,cn=config
+dn: cn=1.3.6.1.1.14,cn=features,cn=config
 objectClass: top
 objectClass: goDirConfigFeature
-cn: 1.3.6.1.4.1.1466.20037
-description: StartTLS
+cn: 1.3.6.1.1.14
+description: RFC 4525 Modify-Increment Operation
 
-dn: cn=exop,cn=config
+dn: cn=1.3.6.1.4.1.4203.1.5.1,cn=features,cn=config
+objectClass: top
+objectClass: goDirConfigFeature
+cn: 1.3.6.1.4.1.4203.1.5.1
+description: RFC 3673 All Op Attrs
+
+dn: cn=1.3.6.1.4.1.4203.1.5.2,cn=features,cn=config
+objectClass: top
+objectClass: goDirConfigFeature
+cn: 1.3.6.1.4.1.4203.1.5.2
+description: RFC 4529 Attributes By ObjectClass
+
+dn: cn=1.3.6.1.4.1.1466.20036,cn=features,cn=config
+objectClass: top
+objectClass: goDirConfigFeature
+cn: 1.3.6.1.4.1.1466.20036
+description: RFC 4511 Notice of Disconnection
+
+dn: cn=1.3.6.1.4.1.4203.1.5.3,cn=features,cn=config
+objectClass: top
+objectClass: goDirConfigFeature
+cn: 1.3.6.1.4.1.4203.1.5.3
+description: RFC 4526 Absolute True and False Filters
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.4.1.4203.1.5.4,cn=features,cn=config
+objectClass: top
+objectClass: goDirConfigFeature
+cn: 1.3.6.1.4.1.4203.1.5.4
+description: RFC 3866 Language Tags
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.4.1.4203.1.5.5,cn=features,cn=config
+objectClass: top
+objectClass: goDirConfigFeature
+cn: 1.3.6.1.4.1.4203.1.5.5
+description: RFC 3866 Language Range Options
+configDisabled: TRUE
+
+dn: cn=extensions,cn=config
 objectClass: top
 objectClass: goDirConfigExtensions
-cn: exop
-description: LDAP Extended Operations
+cn: extensions
+description: supportedExtension
 
-dn: cn=1.3.6.1.4.1.4203.1.11.3,cn=exop,cn=config
+dn: cn=1.3.6.1.4.1.4203.1.11.1,cn=extensions,cn=config
+objectClass: top
+objectClass: goDirConfigExtension
+cn: 1.3.6.1.4.1.4203.1.11.1
+description: RFC 3062 Password Modify Extension
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.4.1.4203.1.11.3,cn=extensions,cn=config
+objectClass: top
+objectClass: goDirConfigExtension
+cn: 1.3.6.1.4.1.4203.1.11.3
+description: RFC 4532 Who Am I? Extension
+
+dn: cn=1.3.6.1.4.1.1466.20037,cn=extensions,cn=config
+objectClass: top
+objectClass: goDirConfigExtension
+cn: 1.3.6.1.4.1.1466.20037
+description: RFC 2830 StartTLS
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.1.8,cn=extensions,cn=config
+objectClass: top
+objectClass: goDirConfigExtension
+cn: 1.3.6.1.1.8
+description: RFC 3909 Cancel Operation
+
+dn: cn=1.3.6.1.1.21.1,cn=extensions,cn=config
+objectClass: top
+objectClass: goDirConfigExtension
+cn: 1.3.6.1.1.21.1
+description: RFC 5805 Transaction Start Request
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.1.21.3,cn=extensions,cn=config
+objectClass: top
+objectClass: goDirConfigExtension
+cn: 1.3.6.1.1.21.3
+description: RFC 5805 Transaction End Request
+configDisabled: TRUE
+
+dn: cn=1.3.6.1.4.1.4203.1.11.3,cn=extensions,cn=config
 objectClass: top
 objectClass: goDirConfigExtension
 cn: 1.3.6.1.4.1.4203.1.11.3
 description: The LDAP "Who am I?" Extended Operation
+
+dn: cn=1.3.6.1.4.1.1466.20037,cn=extensions,cn=config
+objectClass: top
+objectClass: goDirConfigExtension
+cn: 1.3.6.1.4.1.1466.20037
+description: StartTLS
+configDisabled: TRUE
 
 dn: cn=indices,cn=config
 objectClass: top
@@ -101,8 +233,8 @@ objectClass: top
 objectClass: goDirConfigTLS
 cn: tls
 description: Listener TLS
-configTLSListenerCert: /path/to/cert.pem
-configTLSListenerKey: /path/to/priv.key
+configTLSListenerCert: /path/to/go-directory/etc/tls/dsa.pem
+configTLSListenerKey: /path/to/go-directory/etc/tls/dsa.key
 
 dn: cn=dib,cn=config
 objectClass: top
@@ -129,6 +261,16 @@ configDITType: 1
 configDataFileMode: 0664
 configDITSuffix: cn=schema
 configDITName: schema
+
+dn: cn=meta-schema,cn=dib,cn=config
+objectClass: top
+objectClass: goDirConfigDIT
+cn: meta-schema
+configDITType: 1
+configDataFileMode: 0444
+configDITSuffix: ou=schema
+configDITName: meta-schema
+configSubordinatesPolicy: 1
 
 dn: cn=config,cn=dib,cn=config
 objectClass: top
@@ -157,7 +299,7 @@ configDBNoSync: TRUE
 configDataFileMode: 0660
 configDITSuffix: dc=example,dc=com
 configDITName: example
-configDataDir: /tmp
+configDataDir: /path/to/go-directory/var/data
 configSubordinatesPolicy: 3
 
 dn: cn=chaining,cn=example,cn=dib,cn=config
@@ -170,10 +312,10 @@ objectClass: top
 objectClass: goDirConfigChain
 description: chain writes to master
 cn: authority
-configChainingEndpointURI: ldap://endpoint.local:389
+configChainingEndpointURI: ldap://endpoint.local:10389
 configChainingSASLMechanism: EXTERNAL
-configTLSClientCert: /path/to/client.crt
-configTLSClientKey: /path/to/client.key
+configTLSClientCert: /path/to/go-directory/etc/tls/client-cert.pem
+configTLSClientKey: /path/to/go-directory/etc/tls/client-priv.key
 configTLSClientMutual: TRUE
 
 dn: cn=sync,cn=example,cn=dib,cn=config
@@ -200,8 +342,8 @@ configReplAgreementAttribute: sn
 configReplAgreementAttribute: l
 configReplAgreementAttribute: st
 configReplAgreementAttribute: c
-configTLSClientCert: /path/to/client.crt
-configTLSClientKey: /path/to/client.key
+configTLSClientCert: /path/to/go-directory/etc/tls/client-cert.pem
+configTLSClientKey: /path/to/go-directory/etc/tls/client-priv.key
 configTLSClientMutual: TRUE
 
 dn: cn=limits,cn=example,cn=dib,cn=config
@@ -230,8 +372,8 @@ cn: people
 configDITType: 2
 configDataFileMode: 0660
 configDBNoSync: TRUE
-configDataDir: /tmp
-configDITSuffix: cn=People,dc=example,dc=com
+configDataDir: /path/to/go-directory/var/data
+configDITSuffix: ou=People,dc=example,dc=com
 configGlueParentSuffix: dc=example,dc=com
 configSubordinatesPolicy: 2
 
@@ -240,14 +382,14 @@ objectClass: top
 objectClass: goDirConfigTLS
 cn: tls
 description: Client TLS
-configTLSClientCert: /path/to/client-cert.pem
-configTLSClientKey: /path/to/client-priv.key
+configTLSClientCert: /path/to/go-directory/etc/tls/client-cert.pem
+configTLSClientKey: /path/to/go-directory/etc/tls/client-priv.key
 configTLSClientMutual: TRUE
 
-dn: cn=schema,cn=config
+dn: cn=schemata,cn=config
 objectClass: top
 objectClass: goDirConfigSchemata
-cn: schema
+cn: schemata
 
 dn: cn=schema,cn=schemata,cn=config
 objectClass: top
@@ -256,10 +398,10 @@ cn: schema
 configMetaSchema: TRUE
 configSchemaDN: cn=schema
 
-dn: cn=otherSchema,cn=schemata,cn=config
+dn: cn=alt-schema,cn=schemata,cn=config
 objectClass: top
 objectClass: goDirConfigSchema
-cn: otherSchema
+cn: alt-schema
 configMetaSchema: FALSE
-configSchemaDN: cn=otherSchema
+configSchemaDN: cn=alt-schema
 

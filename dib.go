@@ -4,6 +4,49 @@ import (
 	"reflect"
 )
 
+const (
+	reqProhibitAdd       uint8 = 1 << iota // 1
+	reqProhibitModify                      // 2
+	reqProhibitModifyDN                    // 4
+	reqProhibitDel                         // 8
+	reqProhibitCompare                     // 16
+	reqProhibitSearch		       // 32
+)
+
+var reqProhibitedNames = map[uint8]string{
+	1:  "add",
+	2:  "mod",
+	4:  "mdn",
+	8:  "del",
+	16: "cmp",
+	32: "srch",
+}
+
+var reqProhibitedBitValues = map[string]uint8{
+	"add":  1,
+	"mod":  2,
+	"mdn":  4,
+	"del":  8,
+	"cmp":  16,
+	"srch": 32,
+}
+
+func reqProhibitString(v uint8) string {
+	bld := strBuilder{}
+	if !( 0 < v && v < 64 ) {
+		return `` // bogus or non-actionable bit val
+	}
+	for i := 1; i < 64; i=i<<1 {
+		if uint8(i)&v != 0 {
+			bld.WriteString(`configProhibitedRequests: `)
+			bld.WriteString(reqProhibitedNames[uint8(i)])
+			bld.WriteRune(10)
+		}
+	}
+
+	return bld.String()
+}
+
 /*
 DIB facilitates the storage of slices of [DIT] instances. An instance
 of this type represents the complete manifest of naming contexts, and
@@ -72,16 +115,31 @@ type DIT struct {
 	SubPol       int       `ldap:"configSubordinatesPolicy"`
 	Mode         OctalMode `ldap:"configDataFileMode"`
 	DataDir      []byte    `ldap:"configDataDir"`
-	DataFile     []byte
-	Advertise    bool `ldap:"configAdvertiseGlueSuffix"`
-	ReadOnly     bool `ldap:"configReadOnly"`
-	NoSync       bool `ldap:"configDBNoSync"`
-	Sync         []ReplicationAgreement
-	Chaining     []Chaining
+	DataFile     []byte    `ldap:"-"`
+
+	// zero or more request op types to disallow
+	// available types: "add" (1), "mod" (2), "mdn" (4), "del (8), "cmp" (16), "srch" (32)
+	// values are shifted, e.g.: 1 << iota 
+	// operations not listed cannot be disallowed (e.g.: bind).
+	Prohibited uint8  `ldap:"configProhibitedRequests"`
+
+	// Whether to publish the suffix via rootDSE namingContexts
+	Advertise bool `ldap:"configAdvertiseGlueSuffix"`
+	ReadOnly  bool `ldap:"configReadOnly"`
+	NoSync    bool `ldap:"configDBNoSync"`
+	Sync      []ReplicationAgreement
+	Chaining  []Chaining
 	ClientTLS
 	Limits
 	Indices
 }
+
+func (r DIT) ProhibitsAdd() bool      { return r.Prohibited&reqProhibitAdd > 0      }
+func (r DIT) ProhibitsModify() bool   { return r.Prohibited&reqProhibitModify > 0   }
+func (r DIT) ProhibitsModifyDN() bool { return r.Prohibited&reqProhibitModifyDN > 0 }
+func (r DIT) ProhibitsDel() bool      { return r.Prohibited&reqProhibitDel > 0      }
+func (r DIT) ProhibitsCompare() bool  { return r.Prohibited&reqProhibitCompare > 0  }
+func (r DIT) ProhibitsSearch() bool   {	return r.Prohibited&reqProhibitSearch > 0   }
 
 /*
 String returns the string representation of the receiver instance.
@@ -117,6 +175,9 @@ func (r DIT) String() string {
 	bld.WriteString("configDITType: ")
 	bld.WriteString(itoa(r.Type))
 	bld.WriteRune(10)
+	if r.Prohibited > 0 {
+		bld.WriteString(reqProhibitString(r.Prohibited))
+	}
 
 	ct := &ClientTLS{}
 	if &r.ClientTLS != ct {

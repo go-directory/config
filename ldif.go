@@ -123,7 +123,7 @@ func (r *Config) dispatchUnmarshal(
 				for i := 0; i < len(vals); i++ {
 					bv, set := reqProhibitedBitValues[vals[i].String()]
 					if set {
-						bitval = bitval|bv
+						bitval = bitval | bv
 					}
 				}
 				fv.Set(reflect.ValueOf(bitval))

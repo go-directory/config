@@ -117,6 +117,17 @@ func (r *Config) dispatchUnmarshal(
 			if err == nil {
 				fv.Set(reflect.ValueOf(OctalMode(mode)))
 			}
+		case uint8:
+			if attr == "configProhibitedRequests" {
+				var bitval uint8
+				for i := 0; i < len(vals); i++ {
+					bv, set := reqProhibitedBitValues[vals[i].String()]
+					if set {
+						bitval = bitval|bv
+					}
+				}
+				fv.Set(reflect.ValueOf(bitval))
+			}
 		}
 	}
 

@@ -289,6 +289,9 @@ configDITType: 1
 configDataFileMode: 0660
 configDITSuffix: cn=state
 configDITName: state
+configProhibitedRequests: add
+configProhibitedRequests: del
+configProhibitedRequests: mdn
 
 dn: cn=example,cn=dib,cn=config
 objectClass: top

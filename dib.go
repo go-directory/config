@@ -5,12 +5,12 @@ import (
 )
 
 const (
-	reqProhibitAdd       uint8 = 1 << iota // 1
-	reqProhibitModify                      // 2
-	reqProhibitModifyDN                    // 4
-	reqProhibitDel                         // 8
-	reqProhibitCompare                     // 16
-	reqProhibitSearch		       // 32
+	reqProhibitAdd      uint8 = 1 << iota // 1
+	reqProhibitModify                     // 2
+	reqProhibitModifyDN                   // 4
+	reqProhibitDel                        // 8
+	reqProhibitCompare                    // 16
+	reqProhibitSearch                     // 32
 )
 
 var reqProhibitedNames = map[uint8]string{
@@ -33,10 +33,10 @@ var reqProhibitedBitValues = map[string]uint8{
 
 func reqProhibitString(v uint8) string {
 	bld := strBuilder{}
-	if !( 0 < v && v < 64 ) {
+	if !(0 < v && v < 64) {
 		return `` // bogus or non-actionable bit val
 	}
-	for i := 1; i < 64; i=i<<1 {
+	for i := 1; i < 64; i = i << 1 {
 		if uint8(i)&v != 0 {
 			bld.WriteString(`configProhibitedRequests: `)
 			bld.WriteString(reqProhibitedNames[uint8(i)])
@@ -119,9 +119,9 @@ type DIT struct {
 
 	// zero or more request op types to disallow
 	// available types: "add" (1), "mod" (2), "mdn" (4), "del (8), "cmp" (16), "srch" (32)
-	// values are shifted, e.g.: 1 << iota 
+	// values are shifted, e.g.: 1 << iota
 	// operations not listed cannot be disallowed (e.g.: bind).
-	Prohibited uint8  `ldap:"configProhibitedRequests"`
+	Prohibited uint8 `ldap:"configProhibitedRequests"`
 
 	// Whether to publish the suffix via rootDSE namingContexts
 	Advertise bool `ldap:"configAdvertiseGlueSuffix"`
@@ -134,12 +134,12 @@ type DIT struct {
 	Indices
 }
 
-func (r DIT) ProhibitsAdd() bool      { return r.Prohibited&reqProhibitAdd > 0      }
-func (r DIT) ProhibitsModify() bool   { return r.Prohibited&reqProhibitModify > 0   }
+func (r DIT) ProhibitsAdd() bool      { return r.Prohibited&reqProhibitAdd > 0 }
+func (r DIT) ProhibitsModify() bool   { return r.Prohibited&reqProhibitModify > 0 }
 func (r DIT) ProhibitsModifyDN() bool { return r.Prohibited&reqProhibitModifyDN > 0 }
-func (r DIT) ProhibitsDel() bool      { return r.Prohibited&reqProhibitDel > 0      }
-func (r DIT) ProhibitsCompare() bool  { return r.Prohibited&reqProhibitCompare > 0  }
-func (r DIT) ProhibitsSearch() bool   {	return r.Prohibited&reqProhibitSearch > 0   }
+func (r DIT) ProhibitsDel() bool      { return r.Prohibited&reqProhibitDel > 0 }
+func (r DIT) ProhibitsCompare() bool  { return r.Prohibited&reqProhibitCompare > 0 }
+func (r DIT) ProhibitsSearch() bool   { return r.Prohibited&reqProhibitSearch > 0 }
 
 /*
 String returns the string representation of the receiver instance.

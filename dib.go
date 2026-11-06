@@ -107,15 +107,17 @@ DIT implements the slice type of [DIB]. Each instance of this type represents
 a single naming context and all associated parameters to be honored by the DSA.
 */
 type DIT struct {
-	DN           []byte    // cn=<friendly dit>,cn=dib,cn=config
-	Name         []byte    `ldap:"cn"`              // friendly dit name, e.g.: "example"
-	Suffix       []byte    `ldap:"configDITSuffix"` // e.g.: "dc=example,dc=com"
-	ParentSuffix []byte    `ldap:"configGlueParentSuffix"`
-	Type         int       `ldap:"configDITType"`
-	SubPol       int       `ldap:"configSubordinatesPolicy"`
-	Mode         OctalMode `ldap:"configDataFileMode"`
-	DataDir      []byte    `ldap:"configDataDir"`
-	DataFile     []byte    `ldap:"-"`
+	DN           []byte              // cn=<friendly dit>,cn=dib,cn=config
+	Name         []byte              `ldap:"cn"`              // friendly dit name, e.g.: "example"
+	Suffix       []byte              `ldap:"configDITSuffix"` // e.g.: "dc=example,dc=com"
+	ParentSuffix []byte              `ldap:"configGlueParentSuffix"`
+	Type         int                 `ldap:"configDITType"`
+	SubPol       int                 `ldap:"configSubordinatesPolicy"`
+	Mode         OctalMode           `ldap:"configDataFileMode"`
+	DataDir      []byte              `ldap:"configDataDir"`
+	DataFile     []byte              `ldap:"-"`
+	SchemaParams []byte              `ldap:"configSchemaParametersDN"`
+	Classes      map[string]struct{} `ldap:"-"`
 
 	// zero or more request op types to disallow
 	// available types: "add" (1), "mod" (2), "mdn" (4), "del (8), "cmp" (16), "srch" (32)
@@ -152,26 +154,82 @@ func (r DIT) String() string {
 	bld.WriteString("dn: ")
 	bld.Write(r.DN)
 	bld.WriteRune(10)
+
 	bld.WriteString("objectClass: top")
 	bld.WriteRune(10)
 	bld.WriteString("objectClass: goDirConfigDIT")
 	bld.WriteRune(10)
+	if _, pres := r.Classes[`goDirConfigSubschemaSubentryDIT`]; pres {
+		bld.WriteString("objectClass: goDirConfigSubschemaSubentryDIT")
+		bld.WriteRune(10)
+	} else if _, pres = r.Classes[`goDirConfigMetaSchemaDIT`]; pres {
+		bld.WriteString("objectClass: goDirConfigMetaSchemaDIT")
+		bld.WriteRune(10)
+	}
+
 	bld.WriteString("cn: ")
 	bld.Write(r.Name)
 	bld.WriteRune(10)
 	bld.WriteString("configDITSuffix: ")
 	bld.Write(r.Suffix)
 	bld.WriteRune(10)
+	if len(r.SchemaParams) > 0 {
+		bld.WriteString("configSchemaParametersDN: ")
+		bld.Write(r.SchemaParams)
+		bld.WriteRune(10)
+	}
+
+	if len(r.DataDir) > 0 {
+		bld.WriteString("configDataDir: ")
+		bld.Write(r.DataDir)
+		bld.WriteRune(10)
+	}
+
 	if r.SubPol > 0 {
 		bld.WriteString("configSubordinatesPolicy: ")
 		bld.WriteString(itoa(r.SubPol))
 		bld.WriteRune(10)
 	}
+
+	bld.WriteString("configFileMode: ")
+	mode := fuint(uint64(r.Mode), 8)
+	for len(mode) < 4 {
+		mode = "0" + mode
+	}
+	bld.WriteString(mode)
+	bld.WriteRune(10)
+
+	boo := bFalse
+	if r.Mode&0600 == 0 || r.ReadOnly {
+		boo = bTrue
+	}
+	bld.WriteString("configReadOnly: ")
+	bld.Write(boo)
+	bld.WriteRune(10)
+
+	boo = bFalse
+	if r.NoSync {
+		boo = bTrue
+	}
+	bld.WriteString("configDBNoSync: ")
+	bld.Write(boo)
+	bld.WriteRune(10)
+
 	if len(r.ParentSuffix) > 0 {
 		bld.WriteString("configGlueParentSuffix: ")
 		bld.Write(r.ParentSuffix)
 		bld.WriteRune(10)
+
+		boo = bFalse
+		if r.Advertise {
+			boo = bTrue
+		}
+
+		bld.WriteString("configAdvertiseGlueSuffix: ")
+		bld.Write(boo)
+		bld.WriteRune(10)
 	}
+
 	bld.WriteString("configDITType: ")
 	bld.WriteString(itoa(r.Type))
 	bld.WriteRune(10)
@@ -279,6 +337,12 @@ func ditHandler(
 	})
 
 	edn := E.DN()
+	classes := E.GetAttributeValues([]byte(`objectClass`))
+	dit.Classes = make(map[string]struct{})
+	for i := 0; i < len(classes); i++ {
+		dit.Classes[classes[i].String()] = struct{}{}
+	}
+
 	for _, this := range L.Entries {
 		tdn := this.DN()
 		if tdn.Equal(edn) || !bHasSfx(tdn, edn) {

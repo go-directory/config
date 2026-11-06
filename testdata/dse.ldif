@@ -256,21 +256,28 @@ configDITName: frontend
 dn: cn=schema,cn=dib,cn=config
 objectClass: top
 objectClass: goDirConfigDIT
+objectClass: goDirConfigSubschemaSubentryDIT
 cn: schema
 configDITType: 1
 configDataFileMode: 0664
 configDITSuffix: cn=schema
 configDITName: schema
+configSchemaParametersDN: cn=schema,cn=schemata,cn=config
+configProhibitedRequests: add
+configProhibitedRequests: del
+configProhibitedRequests: mdn
 
 dn: cn=meta-schema,cn=dib,cn=config
 objectClass: top
 objectClass: goDirConfigDIT
+objectClass: goDirConfigMetaSchemaDIT
 cn: meta-schema
 configDITType: 1
 configDataFileMode: 0444
 configDITSuffix: ou=schema
 configDITName: meta-schema
 configSubordinatesPolicy: 1
+configSchemaParametersDN: cn=schema,cn=schemata,cn=config
 
 dn: cn=config,cn=dib,cn=config
 objectClass: top
@@ -280,6 +287,7 @@ configDITType: 1
 configDataFileMode: 0660
 configDITSuffix: cn=config
 configDITName: config
+configProhibitedRequests: mdn
 
 dn: cn=state,cn=dib,cn=config
 objectClass: top
@@ -379,6 +387,7 @@ configDataDir: /path/to/go-directory/var/data
 configDITSuffix: ou=People,dc=example,dc=com
 configGlueParentSuffix: dc=example,dc=com
 configSubordinatesPolicy: 2
+configAdvertiseGlueSuffix: TRUE
 
 dn: cn=tls,cn=people,cn=dib,cn=config
 objectClass: top

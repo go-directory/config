@@ -129,6 +129,7 @@ type DIT struct {
 	Advertise bool `ldap:"configAdvertiseGlueSuffix"`
 	ReadOnly  bool `ldap:"configReadOnly"`
 	NoSync    bool `ldap:"configDBNoSync"`
+	Monitor   bool `ldap:"configMonitorDIT"`
 	Sync      []ReplicationAgreement
 	Chaining  []Chaining
 	ClientTLS
@@ -212,6 +213,14 @@ func (r DIT) String() string {
 		boo = bTrue
 	}
 	bld.WriteString("configDBNoSync: ")
+	bld.Write(boo)
+	bld.WriteRune(10)
+
+	boo = bFalse
+	if r.Monitor {
+		boo = bTrue
+	}
+	bld.WriteString("configMonitorDIT: ")
 	bld.Write(boo)
 	bld.WriteRune(10)
 

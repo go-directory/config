@@ -84,6 +84,9 @@ func (r Schema) String() string {
 	bld.WriteString("cn: ")
 	bld.Write(r.Name)
 	bld.WriteRune(10)
+	bld.WriteString("configSchemaDN: cn=")
+	bld.Write(r.Name)
+	bld.WriteRune(10)
 	if r.Meta {
 		bld.WriteString("configMetaSchema: TRUE")
 		bld.WriteRune(10)

@@ -72,8 +72,9 @@ var (
 misc. tokens
 */
 var (
-	comma = []byte(`,`)
-	bTrue = []byte("TRUE")
+	comma  = []byte(`,`)
+	bTrue  = []byte("TRUE")
+	bFalse = []byte("FALSE")
 )
 
 func commaAppend(value []byte) []byte  { return append(value, comma...) }
